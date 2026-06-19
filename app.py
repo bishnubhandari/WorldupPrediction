@@ -5,8 +5,20 @@ from datetime import datetime, timedelta
 import hashlib
 import os
 import textwrap
+import json
+import re
+import threading
+import time as time_module
+from urllib.request import urlopen, Request
+from urllib.error import URLError
+from html.parser import HTMLParser
 from fpdf import FPDF
 from PIL import Image
+try:
+    from streamlit_autorefresh import st_autorefresh
+    _HAS_AUTOREFRESH = True
+except ImportError:
+    _HAS_AUTOREFRESH = False
 
 # --- Page Config & Logo ---
 logo_path = r"D:\University\worldcup_predictor\zRSSLZa7bC9pfCYAf7-DxA_64x64.png"
@@ -25,7 +37,6 @@ st.set_page_config(
 )
 
 # --- Nepal timezone helpers ---
-import re
 from datetime import datetime, timedelta, timezone
 
 def get_nepal_time():
@@ -61,6 +72,509 @@ def parse_to_nepal_time(date_str, time_str):
         
     nepal_dt = dt - timedelta(minutes=offset_minutes) + timedelta(hours=5, minutes=45)
     return nepal_dt
+
+# ============================================================
+# --- Wikipedia Live Scraper ---
+# ============================================================
+WIKI_URL = "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup"
+WIKI_CACHE = {"html": None, "fetched_at": None}
+
+def _fetch_wiki_html():
+    """Fetch Wikipedia page HTML with a browser-like UA. Caches for 9 minutes."""
+    now = datetime.utcnow()
+    cached_at = WIKI_CACHE.get("fetched_at")
+    if cached_at and (now - cached_at).total_seconds() < 540:  # 9 min cache
+        return WIKI_CACHE["html"]
+    try:
+        req = Request(
+            WIKI_URL,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; WorldCupBot/1.0; +https://example.com)"}
+        )
+        with urlopen(req, timeout=15) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+        WIKI_CACHE["html"] = html
+        WIKI_CACHE["fetched_at"] = now
+        return html
+    except Exception:
+        return WIKI_CACHE.get("html")  # return stale on error
+
+
+def _clean_text(s):
+    """Strip HTML tags and normalize whitespace/HTML entities."""
+    s = re.sub(r'<[^>]+>', '', s)
+    s = re.sub(r'\[\d+\]', '', s)   # remove citation refs like [1]
+    s = s.replace('&nbsp;', ' ').replace('&#160;', ' ').replace('\u00a0', ' ')
+    s = s.replace('&amp;', '&').replace('&#38;', '&')
+    s = s.replace('&lt;', '<').replace('&gt;', '>')
+    s = s.replace('&quot;', '"').replace('&#34;', '"')
+    s = s.replace('&#39;', "'").replace('&apos;', "'")
+    s = re.sub(r'\s+', ' ', s)
+    return s.strip()
+
+
+def parse_wiki_scores():
+    """
+    Parse football box scores from Wikipedia.
+    Returns list of dicts: {home, away, score_a, score_b, status}
+    status: 'FINISHED' | 'LIVE' | 'UPCOMING'
+    """
+    html = _fetch_wiki_html()
+    if not html:
+        return []
+    
+    matches = []
+    # Wikipedia uses class="fevent" for match tables (contains fhome/faway/fscore cells)
+    box_pattern = re.compile(
+        r'<table[^>]*class="[^"]*fevent[^"]*"[^>]*>(.*?)</table>',
+        re.DOTALL | re.IGNORECASE
+    )
+    score_pattern = re.compile(
+        r'<th[^>]*class="[^"]*fscore[^"]*"[^>]*>(.*?)</th>',
+        re.DOTALL | re.IGNORECASE
+    )
+    team_pattern = re.compile(
+        r'<th[^>]*class="[^"]*fhome[^"]*"[^>]*>(.*?)</th>|<th[^>]*class="[^"]*faway[^"]*"[^>]*>(.*?)</th>',
+        re.DOTALL | re.IGNORECASE
+    )
+    
+    for box_m in box_pattern.finditer(html):
+        box_html = box_m.group(1)
+        
+        # Extract teams
+        team_matches = team_pattern.findall(box_html)
+        teams = []
+        for grp in team_matches:
+            for g in grp:
+                if g.strip():
+                    t = _clean_text(g)
+                    # Clean HTML entities
+                    t = t.replace('&#39;', "'").replace('&quot;', '"')
+                    t = t.replace('\u00a0', ' ').strip()
+                    teams.append(t)
+        if len(teams) < 2:
+            continue
+        home = teams[0]
+        away = teams[1]
+        
+        # Skip placeholder entries (e.g. "Winner Group A")
+        if 'winner' in home.lower() or 'runner' in home.lower() or 'group' in home.lower():
+            continue
+        if 'winner' in away.lower() or 'runner' in away.lower() or 'group' in away.lower():
+            continue
+        
+        # Extract score
+        score_m = score_pattern.search(box_html)
+        score_text = _clean_text(score_m.group(1)) if score_m else ""
+        
+        # Parse score
+        score_a, score_b, status = None, None, "UPCOMING"
+        score_clean = re.sub(r'\(.*?\)', '', score_text).strip()  # remove pen. notation
+        dash_match = re.match(r'^(\d+)[\u2013\u2014\-](\d+)$', score_clean)
+        if dash_match:
+            score_a = int(dash_match.group(1))
+            score_b = int(dash_match.group(2))
+            status = "FINISHED"
+        elif re.search(r'live|in progress|\d+\'', score_text, re.IGNORECASE):
+            status = "LIVE"
+        
+        matches.append({
+            "home": home, "away": away,
+            "score_a": score_a, "score_b": score_b,
+            "status": status
+        })
+    
+    return matches
+
+
+
+
+def parse_wiki_group_tables():
+    """
+    Parse all group standing tables from Wikipedia.
+    Returns dict: {group_name: [{team, mp, w, d, l, gf, ga, gd, pts}, ...]}
+    """
+    html = _fetch_wiki_html()
+    if not html:
+        return {}
+    
+    # Find group sections: <h3>Group A</h3> ... <table class="wikitable">...</table>
+    group_section_pat = re.compile(
+        r'<h[23][^>]*>[^<]*Group\s+([A-L])[^<]*</h[23]>(.*?)(?=<h[23]|$)',
+        re.DOTALL | re.IGNORECASE
+    )
+    table_pat = re.compile(
+        r'<table[^>]*class="[^"]*wikitable[^"]*"[^>]*>(.*?)</table>',
+        re.DOTALL | re.IGNORECASE
+    )
+    row_pat = re.compile(r'<tr[^>]*>(.*?)</tr>', re.DOTALL | re.IGNORECASE)
+    cell_pat = re.compile(r'<t[dh][^>]*>(.*?)</t[dh]>', re.DOTALL | re.IGNORECASE)
+    
+    groups = {}
+    for grp_m in group_section_pat.finditer(html):
+        grp_letter = grp_m.group(1).upper()
+        section_html = grp_m.group(2)
+        
+        table_m = table_pat.search(section_html)
+        if not table_m:
+            continue
+        table_html = table_m.group(1)
+        
+        rows = row_pat.findall(table_html)
+        teams = []
+        for row in rows[1:]:  # skip header
+            cells_raw = cell_pat.findall(row)
+            cells = [_clean_text(c) for c in cells_raw]
+            if len(cells) < 9:
+                continue
+            # Wikipedia group tables: Pos | Team | Pld | W | D | L | GF | GA | GD | Pts
+            pos_cell = cells[0].strip()
+            # Pos cell is a digit (rank) or empty; skip header-like rows
+            if not pos_cell.isdigit():
+                continue
+            # Team name is cells[1], clean non-breaking spaces and suffix notes like (H) (A)
+            raw_team = cells[1]
+            raw_team = raw_team.replace('\u00a0', ' ').replace('&#160;', '')
+            raw_team = re.sub(r'\s*\(H(?:, A)?\)\s*', '', raw_team)  # remove (H) or (H, A)
+            raw_team = raw_team.strip()
+            if not raw_team:
+                continue
+            try:
+                mp_val = cells[2] if len(cells) > 2 else "0"
+                w_val  = cells[3] if len(cells) > 3 else "0"
+                d_val  = cells[4] if len(cells) > 4 else "0"
+                l_val  = cells[5] if len(cells) > 5 else "0"
+                gf_val = cells[6] if len(cells) > 6 else "0"
+                ga_val = cells[7] if len(cells) > 7 else "0"
+                gd_val = cells[8] if len(cells) > 8 else "0"
+                pts_val = cells[9] if len(cells) > 9 else "0"
+                entry = {
+                    "pos": int(pos_cell),
+                    "team": raw_team,
+                    "mp":  int(mp_val)  if mp_val.isdigit()  else 0,
+                    "w":   int(w_val)   if w_val.isdigit()   else 0,
+                    "d":   int(d_val)   if d_val.isdigit()   else 0,
+                    "l":   int(l_val)   if l_val.isdigit()   else 0,
+                    "gf":  int(gf_val)  if gf_val.isdigit()  else 0,
+                    "ga":  int(ga_val)  if ga_val.isdigit()  else 0,
+                    "gd":  gd_val.replace('\u2212', '-'),  # normalize minus sign
+                    "pts": int(pts_val) if pts_val.isdigit() else 0,
+                }
+                teams.append(entry)
+            except (IndexError, ValueError):
+                pass
+        if teams:
+            groups[grp_letter] = teams
+    
+    return groups
+
+def parse_wiki_goalscorers():
+    """
+    Parse the top goalscorers from Wikipedia's Goalscorers section.
+    Wikipedia uses a div-col bulleted list grouped by goals count.
+    Returns list of dicts: {player, team, goals} sorted by goals desc.
+    """
+    html = _fetch_wiki_html()
+    if not html:
+        return []
+    
+    # Find the Goalscorers section (everything between it and the next h2/h3)
+    gs_idx = html.find('id="Goalscorers"')
+    if gs_idx < 0:
+        return []
+    
+    # Find the section end (next h2 or h3)
+    section_end = re.search(r'<h[23][\s>]', html[gs_idx + 50:])
+    gs_section = html[gs_idx: gs_idx + 50 + (section_end.start() if section_end else 20000)]
+    
+    scorers = []
+    # Find goal-count groups: <b>N goals</b> or <b>N goal</b>
+    goal_group_pat = re.compile(
+        r'<[bp][^>]*>\s*(\d+)\s+goals?\s*</[bp]>(.*?)(?=<[bp][^>]*>\s*\d+\s+goals?|<h[23][\s>]|$)',
+        re.DOTALL | re.IGNORECASE
+    )
+    # Extract player names from anchor tags within list items
+    player_pat = re.compile(r'<li[^>]*>(.*?)</li>', re.DOTALL | re.IGNORECASE)
+    link_pat = re.compile(r'<a[^>]*title="([^"]+)"[^>]*>', re.IGNORECASE)
+    flag_pat = re.compile(r'<img[^>]*alt="([^"]+national football team[^"]*)"[^>]*/>', re.IGNORECASE)
+    
+    for goal_m in goal_group_pat.finditer(gs_section):
+        goals = int(goal_m.group(1))
+        block = goal_m.group(2)
+        
+        for li_m in player_pat.finditer(block):
+            li_html = li_m.group(1)
+            
+            # Get team from flag image alt text
+            flag_m = flag_pat.search(li_html)
+            team = ""
+            if flag_m:
+                team_raw = flag_m.group(1)
+                team = re.sub(r'\s*national football team.*$', '', team_raw, flags=re.IGNORECASE).strip()
+                team = re.sub(r"\s*men's.*$", '', team, flags=re.IGNORECASE).strip()
+            
+            # Get player name from link (second link after flag, or any link)
+            links = link_pat.findall(li_html)
+            player = ""
+            for lnk in links:
+                # Skip flag/country links (they match team names)
+                if 'national' in lnk.lower() or 'football team' in lnk.lower():
+                    continue
+                player = lnk.strip()
+                break
+            
+            if not player:
+                # Fallback: clean all HTML
+                player = _clean_text(li_html)
+                # Remove team name if present
+                if team and player.startswith(team):
+                    player = player[len(team):].strip()
+            
+            if player and len(player) < 60:
+                scorers.append({"player": player, "team": team, "goals": goals})
+    
+    # Sort by goals descending, then player name
+    scorers.sort(key=lambda x: (-x["goals"], x["player"]))
+    return scorers
+
+
+# --- Team name normalization for wiki->db matching ---
+_WIKI_TO_DB = {
+    "Czech Republic": "Czechia",
+    "Czechia": "Czechia",
+    "Ivory Coast": "Cote d'Ivoire",
+    "Cote d'Ivoire": "Cote d'Ivoire",
+    "Cura\u00e7ao": "Curacao",
+    "DR Congo": "Congo DR",
+    "United States": "United States",
+    "USA": "United States",
+    "South Korea": "Korea Republic",
+    "Korea Republic": "Korea Republic",
+    "Iran": "IR Iran",
+    "IR Iran": "IR Iran",
+    "Turkey": "Turkiye",
+    "Turkiye": "Turkiye",
+    "Bosnia and Herzegovina": "Bosnia and Herzegovina",
+}
+
+def _norm_wiki_name(name):
+    return _WIKI_TO_DB.get(name, name)
+
+
+def sync_scores_from_wiki():
+    """
+    Fetches matches from Wikipedia and updates scores in DB.
+    - FINISHED matches get score + finished=1
+    - LIVE matches get score only (finished=0)
+    Returns (updated_count, errors)
+    """
+    wiki_matches = parse_wiki_scores()
+    if not wiki_matches:
+        return 0, "Could not fetch Wikipedia data"
+    
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    updated = 0
+    try:
+        db_matches = conn.execute(
+            "SELECT id, team_a, team_b, kickoff_time, finished, score_a, score_b FROM matches"
+        ).fetchall()
+        
+        # Build lookup: (normalized_a, normalized_b) -> db row
+        db_lookup = {}
+        for row in db_matches:
+            key = (row["team_a"].strip().lower(), row["team_b"].strip().lower())
+            db_lookup[key] = row
+        
+        for wm in wiki_matches:
+            norm_home = _norm_wiki_name(wm["home"])
+            norm_away = _norm_wiki_name(wm["away"])
+            key = (norm_home.lower(), norm_away.lower())
+            
+            db_row = db_lookup.get(key)
+            if not db_row:
+                continue  # no matching DB match
+            
+            if db_row["finished"] == 1:
+                continue  # already finalized, skip
+            
+            if wm["status"] == "FINISHED" and wm["score_a"] is not None:
+                conn.execute(
+                    "UPDATE matches SET score_a=?, score_b=?, finished=1 WHERE id=?",
+                    (wm["score_a"], wm["score_b"], db_row["id"])
+                )
+                updated += 1
+            elif wm["status"] == "LIVE" and wm["score_a"] is not None:
+                conn.execute(
+                    "UPDATE matches SET score_a=?, score_b=?, finished=0 WHERE id=?",
+                    (wm["score_a"], wm["score_b"], db_row["id"])
+                )
+                updated += 1
+        
+        conn.commit()
+    finally:
+        conn.close()
+    
+    return updated, None
+# --- Smart Background Sync: fires at halftime, full-time, ET halftime, ET full-time ---
+_SYNC_LOCK = threading.Lock()
+_LAST_SYNC = {"time": None, "updated": 0, "error": None, "next_sync": None, "reason": ""}
+
+# Sync windows in seconds after kickoff (name, start_sec, end_sec)
+# We allow a 5-min window around each target to catch the check cycle
+_SYNC_WINDOWS = [
+    ("HT",   45 * 60,  55 * 60),   # halftime: 45–55 min
+    ("FT",   90 * 60, 105 * 60),   # full time: 90–105 min
+    ("ET-HT",105 * 60, 115 * 60),  # extra-time halftime: 105–115 min
+    ("ET-FT",120 * 60, 135 * 60),  # extra-time full time: 120–135 min
+]
+
+# Track which (match_id, window_name) pairs have already been synced this session
+_SYNCED_WINDOWS: set = set()
+
+
+def _has_live_match():
+    """Check DB for any match currently in progress (kicked off in last 2.5 hrs, not finished)."""
+    try:
+        now_utc = datetime.utcnow()
+        conn = sqlite3.connect(DB_PATH)
+        rows = conn.execute("SELECT kickoff_time FROM matches WHERE finished = 0").fetchall()
+        conn.close()
+        for (ko,) in rows:
+            try:
+                ko_dt = datetime.strptime(ko, '%Y-%m-%d %H:%M:%S')
+                ko_utc = ko_dt - timedelta(hours=5, minutes=45)
+                elapsed = (now_utc - ko_utc).total_seconds()
+                if 0 <= elapsed <= 9000:  # 0 to 2.5 hours after kickoff
+                    return True
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return False
+
+
+def _get_matches_needing_sync():
+    """
+    Returns list of match rows that need a Wikipedia sync right now.
+    A match needs sync if:
+      - It is unfinished
+      - Its elapsed time since kickoff falls within a sync window
+      - That (match_id, window) combo hasn't been synced yet this session
+    """
+    try:
+        now_utc = datetime.utcnow()
+        conn = sqlite3.connect(DB_PATH)
+        rows = conn.execute(
+            "SELECT id, team_a, team_b, kickoff_time FROM matches WHERE finished = 0"
+        ).fetchall()
+        conn.close()
+    except Exception:
+        return []
+
+    need_sync = []
+    for row in rows:
+        try:
+            mid, team_a, team_b, ko = row
+            ko_dt = datetime.strptime(ko, '%Y-%m-%d %H:%M:%S')
+            ko_utc = ko_dt - timedelta(hours=5, minutes=45)
+            elapsed = (now_utc - ko_utc).total_seconds()
+
+            for win_name, win_start, win_end in _SYNC_WINDOWS:
+                key = (mid, win_name)
+                if win_start <= elapsed <= win_end and key not in _SYNCED_WINDOWS:
+                    need_sync.append((mid, team_a, team_b, win_name))
+                    break  # only one window per match per cycle
+        except Exception:
+            pass
+    return need_sync
+
+
+def _next_sync_eta():
+    """Return seconds until next expected sync, and its reason, for display."""
+    try:
+        now_utc = datetime.utcnow()
+        conn = sqlite3.connect(DB_PATH)
+        rows = conn.execute(
+            "SELECT id, kickoff_time FROM matches WHERE finished = 0"
+        ).fetchall()
+        conn.close()
+    except Exception:
+        return None, ""
+
+    soonest = None
+    soonest_reason = ""
+    for (mid, ko) in rows:
+        try:
+            ko_dt = datetime.strptime(ko, '%Y-%m-%d %H:%M:%S')
+            ko_utc = ko_dt - timedelta(hours=5, minutes=45)
+            elapsed = (now_utc - ko_utc).total_seconds()
+            for win_name, win_start, _ in _SYNC_WINDOWS:
+                if (mid, win_name) in _SYNCED_WINDOWS:
+                    continue
+                wait = win_start - elapsed
+                if wait >= 0:
+                    if soonest is None or wait < soonest:
+                        soonest = wait
+                        soonest_reason = win_name
+                    break  # windows are in order; first unseen is the next one
+        except Exception:
+            pass
+    return soonest, soonest_reason
+
+
+def _background_sync_loop():
+    """
+    Wakes every 60 seconds and checks whether any live match just crossed
+    a sync window (HT/FT/ET-HT/ET-FT). Syncs Wikipedia only when needed.
+    """
+    while True:
+        try:
+            time_module.sleep(60)  # wake every minute to check
+            to_sync = _get_matches_needing_sync()
+            if to_sync:
+                WIKI_CACHE["fetched_at"] = None  # force fresh Wikipedia fetch
+                updated, err = sync_scores_from_wiki()
+                now = datetime.utcnow()
+                # Mark all triggered windows as done
+                for (mid, team_a, team_b, win_name) in to_sync:
+                    _SYNCED_WINDOWS.add((mid, win_name))
+                reasons = ", ".join(f"{t[1]} vs {t[2]} @ {t[3]}" for t in to_sync)
+                eta, eta_reason = _next_sync_eta()
+                with _SYNC_LOCK:
+                    _LAST_SYNC["time"] = now
+                    _LAST_SYNC["updated"] = updated
+                    _LAST_SYNC["error"] = err
+                    _LAST_SYNC["reason"] = reasons
+                    _LAST_SYNC["next_sync"] = eta
+        except Exception as e:
+            with _SYNC_LOCK:
+                _LAST_SYNC["error"] = str(e)
+
+
+# Start background thread once (Streamlit reruns share the same process)
+if "_wiki_sync_started" not in st.session_state:
+    t = threading.Thread(target=_background_sync_loop, daemon=True)
+    t.start()
+    st.session_state["_wiki_sync_started"] = True
+
+# On every page load: check if we just missed a sync window (app was restarted mid-match)
+with _SYNC_LOCK:
+    _last_sync_time = _LAST_SYNC.get("time")
+
+_pending_on_load = _get_matches_needing_sync()
+if _pending_on_load:
+    WIKI_CACHE["fetched_at"] = None
+    _upd, _err = sync_scores_from_wiki()
+    for (mid, team_a, team_b, win_name) in _pending_on_load:
+        _SYNCED_WINDOWS.add((mid, win_name))
+    with _SYNC_LOCK:
+        _LAST_SYNC["time"] = datetime.utcnow()
+        _LAST_SYNC["updated"] = _upd
+        _LAST_SYNC["error"] = _err
+        _LAST_SYNC["reason"] = "on-load catch-up"
+
+
+
 
 # --- Password Hashing Helper ---
 def hash_password(password):
@@ -566,10 +1080,13 @@ def generate_match_pdf(match, predictions):
 # --- FIFA Theme Custom CSS ---
 st.html("""
 <style>
-    /* Qatar 2026 World Cup Theme Styling */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+    /* Qatar 2026 World Cup Theme Overhaul */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
-        color: #f8fafc;
+        background: radial-gradient(circle at 50% 50%, #0d1b3e 0%, #050b18 100%) !important;
+        color: #f1f5f9 !important;
+        font-family: 'Outfit', sans-serif !important;
     }
     
     /* Remove default Streamlit top padding to reduce top gaps */
@@ -603,32 +1120,36 @@ st.html("""
     .server-time {
         text-align: center;
         font-size: 0.8rem;
-        color: #94a3b8;
+        color: #cbd5e1;
         margin-bottom: 10px;
     }
     
-    /* Responsive Match Card */
+    /* Glassmorphism Sports Match Cards */
     .match-card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(251, 191, 36, 0.15);
-        border-radius: 12px;
-        padding: 18px;
+        background: rgba(13, 27, 62, 0.45) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(251, 191, 36, 0.2) !important;
+        border-radius: 16px !important;
+        padding: 20px !important;
         margin-bottom: 18px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-        transition: border 0.3s ease;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }
     .match-card:hover {
-        border-color: rgba(251, 191, 36, 0.4);
+        border-color: rgba(251, 191, 36, 0.6) !important;
+        box-shadow: 0 12px 40px 0 rgba(251, 191, 36, 0.2) !important;
+        transform: translateY(-2px) !important;
     }
     
     .card-meta {
         display: flex;
         justify-content: space-between;
         font-size: 0.8rem;
-        color: #94a3b8;
+        color: #cbd5e1;
         border-bottom: 1px solid rgba(255,255,255,0.05);
-        padding-bottom: 6px;
-        margin-bottom: 12px;
+        padding-bottom: 8px;
+        margin-bottom: 14px;
     }
     
     .teams-grid {
@@ -642,12 +1163,13 @@ st.html("""
         flex: 1;
         text-align: center;
         font-weight: 600;
-        font-size: 1.1rem;
+        font-size: 1.15rem;
+        color: #f8fafc;
     }
     .team-flag {
-        font-size: 2rem;
+        font-size: 2.2rem;
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     
     .middle-block {
@@ -658,18 +1180,18 @@ st.html("""
     }
     
     .vs-badge {
-        padding: 3px 12px;
+        padding: 4px 14px;
         background: rgba(251, 191, 36, 0.1);
         border: 1px solid #fbbf24;
         border-radius: 20px;
         color: #fbbf24;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 0.8rem;
     }
     
     .score-display {
-        font-size: 1.8rem;
-        font-weight: 800;
+        font-size: 1.9rem;
+        font-weight: 900;
         color: #f8fafc;
         letter-spacing: 5px;
     }
@@ -677,44 +1199,341 @@ st.html("""
     .card-footer {
         font-size: 0.85rem;
         border-top: 1px solid rgba(255,255,255,0.05);
-        padding-top: 8px;
-        margin-top: 10px;
+        padding-top: 10px;
+        margin-top: 12px;
     }
     
     .badge-status {
         display: inline-block;
-        padding: 2px 8px;
+        padding: 3px 10px;
         border-radius: 6px;
-        font-size: 0.7rem;
-        font-weight: 700;
+        font-size: 0.72rem;
+        font-weight: 800;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
-    .badge-open { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; }
-    .badge-locked { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
-    .badge-finished { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid #94a3b8; }
+    .badge-open { background: rgba(16, 185, 129, 0.15) !important; color: #10b981 !important; border: 1px solid #10b981 !important; }
+    .badge-locked { background: rgba(245, 158, 11, 0.15) !important; color: #f59e0b !important; border: 1px solid #f59e0b !important; }
+    .badge-finished { background: rgba(203, 213, 225, 0.15) !important; color: #cbd5e1 !important; border: 1px solid #cbd5e1 !important; }
     
-    /* Leaderboard Table */
+    /* Premium Standings & Leaderboard Table */
     .table-leaderboard {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate !important;
+        border-spacing: 0 6px !important;
         margin-top: 15px;
-        border-radius: 8px;
-        overflow: hidden;
     }
     .table-leaderboard th {
-        background-color: #fbbf24;
-        color: #0f172a;
-        padding: 12px;
-        font-weight: 700;
-        text-align: left;
+        background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%) !important;
+        color: #050b18 !important;
+        padding: 14px !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        border: none !important;
     }
     .table-leaderboard td {
-        padding: 12px;
-        background-color: rgba(30, 41, 59, 0.4);
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 12px 14px !important;
+        background-color: rgba(13, 27, 62, 0.5) !important;
+        color: #cbd5e1;
+        border-top: 1px solid rgba(255,255,255,0.03) !important;
+        border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+        border-left: none !important;
+        border-right: none !important;
+        font-size: 0.95rem;
+    }
+    .table-leaderboard td:first-child,
+    .table-leaderboard td:first-child b {
+        color: #f8fafc !important; /* Force predictor name to be off-white */
     }
     .table-leaderboard tr:hover td {
-        background-color: rgba(251, 191, 36, 0.05);
+        background-color: rgba(251, 191, 36, 0.1) !important;
+        color: #f8fafc !important;
+    }
+    
+    /* Primary & Secondary Buttons overrides */
+    button[data-testid^="stBaseButton-primary"],
+    button[data-testid^="stBaseButton-formSubmit"] {
+        background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%) !important;
+        color: #050b18 !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.6rem 1.2rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+        box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    button[data-testid^="stBaseButton-primary"]:hover,
+    button[data-testid^="stBaseButton-formSubmit"]:hover {
+        background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%) !important;
+        color: #050b18 !important;
+        box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    button[data-testid="stBaseButton-secondary"] {
+        background-color: rgba(13, 27, 62, 0.6) !important;
+        color: #fbbf24 !important;
+        border: 1px solid rgba(251, 191, 36, 0.4) !important;
+        border-radius: 10px !important;
+        padding: 0.6rem 1.2rem !important;
+        font-weight: 700 !important;
+        transition: all 0.25s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: none !important;
+    }
+    button[data-testid="stBaseButton-secondary"]:hover {
+        background-color: #fbbf24 !important;
+        color: #050b18 !important;
+        border-color: #fbbf24 !important;
+        box-shadow: 0 0 14px rgba(251, 191, 36, 0.45) !important;
+        transform: translateY(-2px) !important;
+    }
+    button[data-testid^="stBaseButton"]:active {
+        transform: translateY(0px) !important;
+    }
+
+    /* Widget labels */
+    label, div[data-testid="stWidgetLabel"] p {
+        color: #e2e8f0 !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.5px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    /* Text input, Password input, Number input, Date input, Time input */
+    div[data-testid="stTextInput"] input, 
+    div[data-testid="stNumberInput"] input, 
+    div[data-testid="stDateInput"] input, 
+    div[data-testid="stTimeInput"] input,
+    input[type="text"], 
+    input[type="number"], 
+    input[type="password"], 
+    input[type="date"], 
+    input[type="time"] {
+        background-color: #0b132b !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(251, 191, 36, 0.25) !important;
+        border-radius: 10px !important;
+        padding: 10px 14px !important;
+        font-size: 1rem !important;
+        height: auto !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    div[data-testid="stTextInput"] input:focus, 
+    div[data-testid="stNumberInput"] input:focus, 
+    div[data-testid="stDateInput"] input:focus, 
+    div[data-testid="stTimeInput"] input:focus,
+    input:focus {
+        border-color: #fbbf24 !important;
+        box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25) !important;
+        background-color: #0e1a3d !important;
+        outline: none !important;
+    }
+    
+    /* Selectbox overrides */
+    div[data-baseweb="select"] > div {
+        background-color: #0b132b !important;
+        border: 1px solid rgba(251, 191, 36, 0.25) !important;
+        border-radius: 10px !important;
+        color: #f8fafc !important;
+        height: auto !important;
+    }
+    div[data-baseweb="select"] div[data-testid="stSelectboxVirtualFocus"] {
+        color: #f8fafc !important;
+    }
+    div[data-baseweb="select"] div {
+        color: #f8fafc !important;
+    }
+    div[data-baseweb="select"] svg {
+        fill: #fbbf24 !important;
+    }
+    
+    /* Dropdown selection lists */
+    ul[role="listbox"] {
+        background-color: #0b132b !important;
+        border: 1px solid rgba(251, 191, 36, 0.5) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.6) !important;
+    }
+    ul[role="listbox"] li {
+        color: #f8fafc !important;
+        padding: 10px 15px !important;
+    }
+    ul[role="listbox"] li[aria-selected="true"] {
+        background-color: rgba(251, 191, 36, 0.15) !important;
+        color: #fbbf24 !important;
+    }
+    ul[role="listbox"] li:hover {
+        background-color: #fbbf24 !important;
+        color: #050b18 !important;
+    }
+    
+    /* Number input stepping buttons */
+    div[data-testid="stNumberInput"] button {
+        background-color: #1a2542 !important;
+        color: #fbbf24 !important;
+        border: 1px solid rgba(251, 191, 36, 0.2) !important;
+    }
+    div[data-testid="stNumberInput"] button:hover {
+        background-color: #fbbf24 !important;
+        color: #050b18 !important;
+    }
+
+    /* Tabs styling overrides */
+    div[data-baseweb="tab-list"] {
+        background-color: rgba(13, 27, 62, 0.5) !important;
+        border-bottom: 2px solid rgba(251, 191, 36, 0.2) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 6px 12px 0 12px !important;
+    }
+    button[data-baseweb="tab"] {
+        color: #94a3b8 !important;
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+        background-color: transparent !important;
+        border: none !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #fbbf24 !important;
+        font-weight: 700 !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        color: #f8fafc !important;
+    }
+    div[data-baseweb="tab-highlight"] {
+        background-color: #fbbf24 !important;
+        height: 3px !important;
+    }
+    
+    /* Expander override */
+    div[data-testid="stExpander"] {
+        background-color: rgba(13, 27, 62, 0.45) !important;
+        border: 1px solid rgba(251, 191, 36, 0.2) !important;
+        border-radius: 12px !important;
+        margin-bottom: 12px !important;
+    }
+    div[data-testid="stExpander"] details summary {
+        color: #fbbf24 !important;
+        font-weight: 700 !important;
+    }
+    div[data-testid="stExpander"] details summary:hover {
+        color: #fcd34d !important;
+    }
+
+    /* Dialog Modals complete readability overrides */
+    div[role="dialog"] {
+        background-color: #0b132b !important;
+        border: 1px solid rgba(251, 191, 36, 0.4) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 16px 45px rgba(0,0,0,0.75) !important;
+    }
+    /* Enforce light/bright off-white text inside dialog modals for readability */
+    div[role="dialog"] h1,
+    div[role="dialog"] h2,
+    div[role="dialog"] h3,
+    div[role="dialog"] h4,
+    div[role="dialog"] h5,
+    div[role="dialog"] h6,
+    div[role="dialog"] p,
+    div[role="dialog"] li {
+        color: #f1f5f9 !important;
+    }
+    div[role="dialog"] table.table-leaderboard th {
+        color: #050b18 !important; /* Gold headers must have dark text */
+    }
+    
+    /* Alert cards overrides */
+    div[data-testid="stAlert"] {
+        background-color: rgba(13, 27, 62, 0.7) !important;
+        border: 1px solid rgba(251, 191, 36, 0.2) !important;
+        border-radius: 10px !important;
+    }
+    div[data-testid="stAlert"] p {
+        color: #e2e8f0 !important;
+    }
+    
+    /* Sidebar overrides */
+    section[data-testid="stSidebar"] {
+        background-color: #050b18 !important;
+        border-right: 1px solid rgba(251, 191, 36, 0.25) !important;
+    }
+    div[data-testid="stSidebarUserContent"] {
+        background-color: #050b18 !important;
+    }
+    div[data-testid="stSidebarHeader"] {
+        background-color: #050b18 !important;
+        border-bottom: 1px solid rgba(251, 191, 36, 0.15) !important;
+    }
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] h4,
+    section[data-testid="stSidebar"] h5,
+    section[data-testid="stSidebar"] h6 {
+        color: #fbbf24 !important;
+        font-weight: 700 !important;
+    }
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] div {
+        color: #e2e8f0 !important;
+    }
+    section[data-testid="stSidebar"] input[type="text"],
+    section[data-testid="stSidebar"] input[type="password"] {
+        background-color: #0d1b3e !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(251, 191, 36, 0.4) !important;
+        border-radius: 8px !important;
+    }
+    section[data-testid="stSidebar"] input[type="text"]:focus,
+    section[data-testid="stSidebar"] input[type="password"]:focus {
+        border-color: #fbbf24 !important;
+        box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25) !important;
+        outline: none !important;
+    }
+
+    /* Sidebar collapse button styles (visible in both states) */
+    [data-testid="stSidebarCollapseButton"] button,
+    button[data-testid="collapsedSidebarMenu"],
+    [data-testid="stHeader"] button {
+        background-color: rgba(13, 27, 62, 0.9) !important;
+        color: #fbbf24 !important;
+        border: 1px solid #fbbf24 !important;
+        border-radius: 50% !important;
+        width: 38px !important;
+        height: 38px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.25s ease !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+        z-index: 999999 !important;
+    }
+    [data-testid="stSidebarCollapseButton"] button:hover,
+    button[data-testid="collapsedSidebarMenu"]:hover,
+    [data-testid="stHeader"] button:hover {
+        background-color: #fbbf24 !important;
+        color: #050b18 !important;
+        box-shadow: 0 0 14px rgba(251, 191, 36, 0.6) !important;
+        transform: scale(1.05) !important;
+    }
+    [data-testid="stSidebarCollapseButton"] button svg,
+    button[data-testid="collapsedSidebarMenu"] svg,
+    [data-testid="stHeader"] button svg {
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        color: inherit !important;
     }
     
     @media (max-width: 600px) {
@@ -787,7 +1606,7 @@ if st.session_state.user_id is None:
 else:
     st.sidebar.html(f"""
     <div style='background:rgba(251,191,36,0.1); border:1px solid #fbbf24; border-radius:8px; padding:15px; text-align:center; margin-bottom:15px;'>
-        <p style='margin:0; font-size:0.85rem; color:#94a3b8;'>Logged in as:</p>
+        <p style='margin:0; font-size:0.85rem; color:#cbd5e1;'>Logged in as:</p>
         <h4 style='margin:5px 0; color:#fbbf24;'>{st.session_state.display_name}</h4>
         <p style='margin:0; font-size:0.8rem; color:#10b981; font-weight:700;'>✔ Connected</p>
     </div>
@@ -852,7 +1671,7 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
         st.html(f"""
         <div style='background:rgba(251,191,36,0.1); border:1px solid #fbbf24; border-radius:8px; padding:15px; margin-bottom:15px;'>
             <h4 style='margin:0 0 5px 0; color:#fbbf24;'>Final Score: {score_a} - {score_b}</h4>
-            <p style='margin:0; font-size:0.9rem; color:#94a3b8;'>
+            <p style='margin:0; font-size:0.9rem; color:#cbd5e1;'>
                 💰 Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> 
                 (Carryover: {pool_details['incoming_carry']:.0f} | Base: {pool_details['base_pool']:.0f})
             </p>
@@ -867,7 +1686,7 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
         st.html(f"""
         <div style='background:rgba(59,130,246,0.1); border:1px solid #3b82f6; border-radius:8px; padding:15px; margin-bottom:15px;'>
             <h4 style='margin:0 0 5px 0; color:#3b82f6;'>Live Score: {live_a} - {live_b}</h4>
-            <p style='margin:0; font-size:0.9rem; color:#94a3b8;'>
+            <p style='margin:0; font-size:0.9rem; color:#cbd5e1;'>
                 💰 Current Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> 
                 (Carryover: {pool_details['incoming_carry']:.0f} | Base: {pool_details['base_pool']:.0f})
             </p>
@@ -930,7 +1749,7 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
                     pts_lbl = "0"
                     bg_color = "background-color:rgba(56,189,248,0.05);"
                 else:
-                    status_lbl = "<span style='color:#94a3b8;'>Incorrect</span>"
+                    status_lbl = "<span style='color:#cbd5e1;'>Incorrect</span>"
                     pts_lbl = "0"
                     bg_color = ""
             else:
@@ -949,17 +1768,87 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
     else:
         st.info("No predictions submitted for this match.")
 
+# --- Auto-refresh & Live Match Banner ---
+# Detect any currently live match to decide refresh rate
+_live_matches_now = []
+try:
+    _now_utc = datetime.utcnow()
+    _conn_live = sqlite3.connect(DB_PATH)
+    _conn_live.row_factory = sqlite3.Row
+    _unfinished = _conn_live.execute("SELECT * FROM matches WHERE finished = 0").fetchall()
+    _conn_live.close()
+    for _m in _unfinished:
+        try:
+            _ko_dt = datetime.strptime(_m['kickoff_time'], '%Y-%m-%d %H:%M:%S')
+            _ko_utc = _ko_dt - timedelta(hours=5, minutes=45)
+            _elapsed = (_now_utc - _ko_utc).total_seconds()
+            if 0 <= _elapsed <= 9000:  # within 2.5 hours of kickoff
+                _live_matches_now.append(_m)
+        except Exception:
+            pass
+except Exception:
+    pass
+
+# Set auto-refresh interval: 60s if live, 5min otherwise
+if _HAS_AUTOREFRESH:
+    _refresh_interval = 60 * 1000 if _live_matches_now else 5 * 60 * 1000
+    st_autorefresh(interval=_refresh_interval, key="live_autorefresh")
+
+# Show LIVE banner for each ongoing match
+if _live_matches_now:
+    for _lm in _live_matches_now:
+        _sa = f"{_lm['score_a']}" if _lm['score_a'] is not None else "?"
+        _sb = f"{_lm['score_b']}" if _lm['score_b'] is not None else "?"
+        _score_disp = f"{_sa} – {_sb}" if _lm['score_a'] is not None else "Ongoing"
+        st.markdown(
+            f"<div style='background:linear-gradient(90deg,rgba(220,38,38,0.9),rgba(239,68,68,0.7)); "
+            f"border-radius:10px; padding:10px 20px; margin-bottom:10px; "
+            f"display:flex; align-items:center; gap:12px; animation:pulse 1.5s infinite;'>"
+            f"<span style='font-size:1.3rem;'>🔴</span>"
+            f"<span style='color:white; font-weight:700; font-size:1.05rem; letter-spacing:0.05em;'>LIVE</span>"
+            f"<span style='color:#fef2f2; font-size:1.05rem;'>{_lm['team_a']} <b style=\"color:white\">{_score_disp}</b> {_lm['team_b']}</span>"
+            f"<span style='margin-left:auto; color:rgba(255,255,255,0.7); font-size:0.8rem;'>Auto-refreshing every 60s</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
 # --- Main App Pages ---
-tabs = ["🏆 Leaderboard", "⚽ Matches & Predictions"]
+tabs = ["🏆 Leaderboard", "⚽ Matches & Predictions", "🌍 Group Tables", "📋 Teams & Lineups"]
 if st.session_state.username == "admin":
     tabs.append("🛠️ Admin Controls")
 
-tab_leaderboard, tab_matches, *tab_admin = st.tabs(tabs)
+tab_leaderboard, tab_matches, tab_groups, tab_lineups, *tab_admin = st.tabs(tabs)
 
 # --- Tab 1: Leaderboard ---
 with tab_leaderboard:
     st.subheader("Recent Predictions & Live Tracker")
     st.write("Click on any recent match to view predictions submitted by all users, including live eligibility and points won.")
+    
+    # Quick live score updater (admin only, visible when match is ongoing)
+    if _live_matches_now and st.session_state.get("username") == "admin":
+        for _lm in _live_matches_now:
+            with st.expander(f"⚡ Quick Live Score Update: {_lm['team_a']} vs {_lm['team_b']}", expanded=True):
+                st.caption("Wikipedia may have a delay for in-progress scores. Enter the current score manually here.")
+                _col1, _col2, _col3 = st.columns([2, 2, 1])
+                with _col1:
+                    _live_sa = st.number_input(f"{_lm['team_a']} goals", min_value=0, max_value=20,
+                                               value=_lm['score_a'] if _lm['score_a'] is not None else 0,
+                                               key=f"live_sa_{_lm['id']}")
+                with _col2:
+                    _live_sb = st.number_input(f"{_lm['team_b']} goals", min_value=0, max_value=20,
+                                               value=_lm['score_b'] if _lm['score_b'] is not None else 0,
+                                               key=f"live_sb_{_lm['id']}")
+                with _col3:
+                    _is_final = st.checkbox("Final?", value=False, key=f"live_fin_{_lm['id']}")
+                if st.button("💾 Update Score", key=f"live_upd_{_lm['id']}", use_container_width=True):
+                    _fin_val = 1 if _is_final else 0
+                    _conn_upd = sqlite3.connect(DB_PATH)
+                    _conn_upd.execute("UPDATE matches SET score_a=?, score_b=?, finished=? WHERE id=?",
+                                      (_live_sa, _live_sb, _fin_val, _lm['id']))
+                    _conn_upd.commit()
+                    _conn_upd.close()
+                    st.success(f"Score updated: {_lm['team_a']} {_live_sa}–{_live_sb} {_lm['team_b']}" + (" (Final)" if _is_final else " (Live)"))
+                    st.rerun()
     
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -1004,7 +1893,7 @@ with tab_leaderboard:
                                 <span>🏆 {pool_details['winners_count']} Winner(s)</span>
                                 <span>+{pool_details['payout']:.1f} pts</span>
                             </div>
-                            <div style='font-size: 0.68rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;' title='{winner_names}'>👑 {winner_names}</div>
+                            <div style='font-size: 0.68rem; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;' title='{winner_names}'>👑 {winner_names}</div>
                         </div>
                         """
                     else:
@@ -1021,7 +1910,7 @@ with tab_leaderboard:
                     score_str = f"<b style='color:#ef4444; font-size:1.2rem;'>{m['score_a']} - {m['score_b']}</b>"
                     status_badge = "<span class='badge-status badge-locked' style='background:rgba(239,68,68,0.15); color:#ef4444; border-color:#ef4444; display:block; margin:4px auto; text-align:center;'>🔴 LIVE</span>"
                 else:
-                    score_str = "<b style='color:#94a3b8; font-size:1.1rem;'>vs</b>"
+                    score_str = "<b style='color:#cbd5e1; font-size:1.1rem;'>vs</b>"
                     status_badge = "<span class='badge-status badge-locked' style='display:block; margin:4px auto; text-align:center;'>Locked</span>"
                 
                 st.html(f"""
@@ -1031,7 +1920,7 @@ with tab_leaderboard:
                     <div style='margin: 5px 0;'>{score_str}</div>
                     <div style='font-size: 0.9rem; font-weight: 600; color: #f8fafc; margin-top: 5px;'>{emoji_b} {m['team_b']}</div>
                     <div style='margin-top:8px;'>{status_badge}</div>
-                    <div style='font-size:0.75rem; color:#94a3b8; margin-top:6px;'>🏟 {city_lbl}</div>
+                    <div style='font-size:0.75rem; color:#cbd5e1; margin-top:6px;'>🏟 {city_lbl}</div>
                     {winners_summary_html}
                 </div>
                 """)
@@ -1122,12 +2011,12 @@ with tab_matches:
                         <div class='middle-block'><span class='vs-badge'>VS</span></div>
                         <div class='team-block'><span class='team-flag'>{emoji_b}</span>{m['team_b']}</div>
                     </div>
-                    <div style='font-size:0.8rem; color:#94a3b8; text-align:center; margin-top:5px;'>
+                    <div style='font-size:0.8rem; color:#cbd5e1; text-align:center; margin-top:5px;'>
                         💰 Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
                     </div>
                     <div class='card-footer' style='text-align:center;'>
-                        <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
-                        <p style='margin:2px 0 0 0; font-size:0.8rem; color:#94a3b8;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
+                        <p style='margin:0; font-size:0.8rem; color:#cbd5e1;'>🏟 {m['stadium']} ({city_lbl})</p>
+                        <p style='margin:2px 0 0 0; font-size:0.8rem; color:#cbd5e1;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
                     </div>
                 </div>
                 """))
@@ -1153,7 +2042,7 @@ with tab_matches:
                                     st.success("Prediction saved! It cannot be modified.")
                                     st.rerun()
                 elif not st.session_state.user_id:
-                    st.html("<p style='text-align:center; color:#94a3b8; font-size:0.85rem; margin-top:-10px; margin-bottom:20px;'>🔒 Login to submit prediction</p>")
+                    st.html("<p style='text-align:center; color:#cbd5e1; font-size:0.85rem; margin-top:-10px; margin-bottom:20px;'>🔒 Login to submit prediction</p>")
         else:
             st.info("No matches currently open for prediction.")
             
@@ -1195,12 +2084,12 @@ with tab_matches:
                             </div>
                             <div class='team-block'><span class='team-flag'>{emoji_b}</span>{m['team_b']}</div>
                         </div>
-                        <div style='font-size:0.8rem; color:#94a3b8; text-align:center; margin-top:5px;'>
+                        <div style='font-size:0.8rem; color:#cbd5e1; text-align:center; margin-top:5px;'>
                             💰 Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
                         </div>
                         <div class='card-footer' style='text-align:center;'>
-                            <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
-                            <p style='margin:2px 0 0 0; font-size:0.8rem; color:#94a3b8;'>Started: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
+                            <p style='margin:0; font-size:0.8rem; color:#cbd5e1;'>🏟 {m['stadium']} ({city_lbl})</p>
+                            <p style='margin:2px 0 0 0; font-size:0.8rem; color:#cbd5e1;'>Started: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
                         </div>
                     </div>
                     """))
@@ -1217,12 +2106,12 @@ with tab_matches:
                             <div class='middle-block'><span class='vs-badge'>VS</span></div>
                             <div class='team-block'><span class='team-flag'>{emoji_b}</span>{m['team_b']}</div>
                         </div>
-                        <div style='font-size:0.8rem; color:#94a3b8; text-align:center; margin-top:5px;'>
+                        <div style='font-size:0.8rem; color:#cbd5e1; text-align:center; margin-top:5px;'>
                             💰 Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
                         </div>
                         <div class='card-footer' style='text-align:center;'>
-                            <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
-                            <p style='margin:2px 0 0 0; font-size:0.8rem; color:#94a3b8;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
+                            <p style='margin:0; font-size:0.8rem; color:#cbd5e1;'>🏟 {m['stadium']} ({city_lbl})</p>
+                            <p style='margin:2px 0 0 0; font-size:0.8rem; color:#cbd5e1;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
                         </div>
                     </div>
                     """))
@@ -1250,7 +2139,7 @@ with tab_matches:
             
     # Column C: Finished
     with col_finished:
-        st.html("<h3 style='color:#94a3b8; border-bottom:2px solid #94a3b8; padding-bottom:5px;'>✅ Finished</h3>")
+        st.html("<h3 style='color:#cbd5e1; border-bottom:2px solid #cbd5e1; padding-bottom:5px;'>✅ Finished</h3>")
         st.write("Match completed. Displays final score, winner, predictions summary, and points calculated.")
         
         if finished_matches:
@@ -1296,11 +2185,11 @@ with tab_matches:
                         </div>
                         <div class='team-block'><span class='team-flag'>{emoji_b}</span>{m['team_b']}</div>
                     </div>
-                    <div style='font-size:0.8rem; color:#94a3b8; text-align:center; margin-top:5px;'>
+                    <div style='font-size:0.8rem; color:#cbd5e1; text-align:center; margin-top:5px;'>
                         💰 Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
                     </div>
                     <div class='card-footer' style='text-align:center;'>
-                        <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
+                        <p style='margin:0; font-size:0.8rem; color:#cbd5e1;'>🏟 {m['stadium']} ({city_lbl})</p>
                     </div>
                 </div>
                 """))
@@ -1348,7 +2237,255 @@ with tab_matches:
         else:
             st.info("No matches finished yet.")
 
-# --- Tab 3: Admin Controls (Only if Admin logged in) ---
+# --- Tab 3: Group Tables & Goalscorers ---
+with tab_groups:
+    st.subheader("🌍 FIFA World Cup 2026 — Group Tables")
+    st.write("Group standings and goalscorers — synced from Wikipedia at halftime, full time, and extra time.")
+    
+    # Show last sync time and next scheduled sync
+    with _SYNC_LOCK:
+        last_sync_time = _LAST_SYNC.get("time")
+        last_sync_err  = _LAST_SYNC.get("error")
+        last_sync_reason = _LAST_SYNC.get("reason", "")
+    
+    _eta_secs, _eta_reason = _next_sync_eta()
+    
+    col_sync_info, col_sync_btn = st.columns([3, 1])
+    with col_sync_info:
+        if last_sync_time:
+            time_ago = int((datetime.utcnow() - last_sync_time).total_seconds() / 60)
+            reason_txt = f" ({last_sync_reason})" if last_sync_reason else ""
+            st.caption(f"Last sync: {time_ago} min ago{reason_txt}")
+        
+        if _eta_secs is not None:
+            eta_min = int(_eta_secs // 60)
+            eta_label = {"HT": "Halftime", "FT": "Full Time", "ET-HT": "ET Halftime", "ET-FT": "ET Full Time"}.get(_eta_reason, _eta_reason)
+            st.caption(f"Next auto-sync: ~{eta_min} min ({eta_label})")
+        else:
+            st.caption("Auto-sync: fires at halftime and full time of each match.")
+        if last_sync_err:
+            st.caption(f"Last sync error: {last_sync_err}")
+    with col_sync_btn:
+        if st.button("🔄 Refresh Now", key="grp_manual_sync", use_container_width=True):
+            with st.spinner("Fetching from Wikipedia..."):
+                WIKI_CACHE["fetched_at"] = None  # force re-fetch
+                _upd, _err = sync_scores_from_wiki()
+                with _SYNC_LOCK:
+                    _LAST_SYNC["time"] = datetime.utcnow()
+                    _LAST_SYNC["updated"] = _upd
+                    _LAST_SYNC["error"] = _err
+                    _LAST_SYNC["reason"] = "manual"
+            if _err:
+                st.warning(f"Sync warning: {_err}")
+            else:
+                st.success(f"Refreshed! {_upd} match(es) updated.")
+    
+    st.html("<hr style='border-color:rgba(251,191,36,0.2); margin: 10px 0 20px 0;'>")
+    
+    # Fetch group tables
+    with st.spinner("Loading group standings..."):
+        wiki_groups = parse_wiki_group_tables()
+    
+    if wiki_groups:
+        # Display groups in 2-column grid
+        group_letters = sorted(wiki_groups.keys())
+        for i in range(0, len(group_letters), 2):
+            col_left, col_right = st.columns(2, gap="large")
+            for j, col in enumerate([col_left, col_right]):
+                if i + j >= len(group_letters):
+                    break
+                grp_letter = group_letters[i + j]
+                grp_teams = wiki_groups[grp_letter]
+                
+                with col:
+                    # Group header
+                    st.markdown(
+                        f"<div style='background:linear-gradient(135deg,rgba(13,27,62,0.8),rgba(30,58,138,0.6)); "
+                        f"border:1px solid rgba(251,191,36,0.3); border-radius:12px; padding:12px 16px; margin-bottom:4px;'>"
+                        f"<h4 style='color:#fbbf24; margin:0; font-size:1.1rem;'>Group {grp_letter}</h4>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Table header
+                    hdr_style = "background:rgba(251,191,36,0.15); color:#fbbf24; font-weight:600; font-size:0.78rem; padding:6px 8px; text-align:center;"
+                    team_style = "color:#e2e8f0; font-size:0.82rem; padding:7px 8px; border-bottom:1px solid rgba(255,255,255,0.05);"
+                    num_style  = "color:#cbd5e1; font-size:0.82rem; padding:7px 8px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.05);"
+                    
+                    table_html = (
+                        "<table style='width:100%; border-collapse:collapse; background:rgba(13,27,62,0.4); "
+                        "border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; margin-bottom:20px;'>"
+                        "<thead><tr>"
+                        f"<th style='{hdr_style} text-align:left; border-radius:0;'>Team</th>"
+                        f"<th style='{hdr_style}'>MP</th>"
+                        f"<th style='{hdr_style}'>W</th>"
+                        f"<th style='{hdr_style}'>D</th>"
+                        f"<th style='{hdr_style}'>L</th>"
+                        f"<th style='{hdr_style}'>GF</th>"
+                        f"<th style='{hdr_style}'>GA</th>"
+                        f"<th style='{hdr_style}'>GD</th>"
+                        f"<th style='{hdr_style}'>Pts</th>"
+                        "</tr></thead><tbody>"
+                    )
+                    
+                    for rank_idx, entry in enumerate(grp_teams):
+                        # Highlight top 2 teams (qualify)
+                        if rank_idx < 2:
+                            row_bg = "background:rgba(34,197,94,0.08);"
+                            pts_color = "#4ade80"
+                        else:
+                            row_bg = ""
+                            pts_color = "#e2e8f0"
+                        
+                        table_html += (
+                            f"<tr style='{row_bg}'>"
+                            f"<td style='{team_style}'>{entry['team']}</td>"
+                            f"<td style='{num_style}'>{entry['mp']}</td>"
+                            f"<td style='{num_style}'>{entry['w']}</td>"
+                            f"<td style='{num_style}'>{entry['d']}</td>"
+                            f"<td style='{num_style}'>{entry['l']}</td>"
+                            f"<td style='{num_style}'>{entry['gf']}</td>"
+                            f"<td style='{num_style}'>{entry['ga']}</td>"
+                            f"<td style='{num_style}'>{entry['gd']}</td>"
+                            f"<td style='color:{pts_color}; font-weight:700; font-size:0.82rem; padding:7px 8px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.05);'>{entry['pts']}</td>"
+                            "</tr>"
+                        )
+                    
+                    table_html += "</tbody></table>"
+                    st.html(table_html)
+    else:
+        st.info("Group standings are not yet available. They will appear once the tournament begins and Wikipedia is updated. Click '🔄 Refresh Now' to try fetching.")
+    
+    # --- Top Goalscorers ---
+    st.html("<hr style='border-color:rgba(251,191,36,0.2); margin: 10px 0 20px 0;'>")
+    st.subheader("⚽ Top Goalscorers")
+    
+    with st.spinner("Loading goalscorers..."):
+        scorers = parse_wiki_goalscorers()
+    
+    if scorers:
+        scorer_html = (
+            "<table style='width:100%; max-width:700px; border-collapse:collapse; background:rgba(13,27,62,0.4); "
+            "border:1px solid rgba(255,255,255,0.08); border-radius:12px; overflow:hidden; margin:0 auto;'>"
+            "<thead><tr>"
+            "<th style='background:rgba(251,191,36,0.15); color:#fbbf24; font-size:0.82rem; padding:9px 12px; text-align:center;'>#</th>"
+            "<th style='background:rgba(251,191,36,0.15); color:#fbbf24; font-size:0.82rem; padding:9px 12px; text-align:left;'>Player</th>"
+            "<th style='background:rgba(251,191,36,0.15); color:#fbbf24; font-size:0.82rem; padding:9px 12px; text-align:left;'>Team</th>"
+            "<th style='background:rgba(251,191,36,0.15); color:#fbbf24; font-size:0.82rem; padding:9px 12px; text-align:center;'>Goals</th>"
+            "</tr></thead><tbody>"
+        )
+        for idx, s in enumerate(scorers[:20]):  # top 20
+            row_bg = "background:rgba(251,191,36,0.06);" if idx == 0 else ""
+            scorer_html += (
+                f"<tr style='{row_bg}'>"
+                f"<td style='color:#94a3b8; font-size:0.82rem; padding:8px 12px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.05);'>{idx+1}</td>"
+                f"<td style='color:#e2e8f0; font-size:0.85rem; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.05);'>{s['player']}</td>"
+                f"<td style='color:#cbd5e1; font-size:0.82rem; padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.05);'>{s['team']}</td>"
+                f"<td style='color:#fbbf24; font-weight:700; font-size:0.9rem; padding:8px 12px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.05);'>{s['goals']}</td>"
+                "</tr>"
+            )
+        scorer_html += "</tbody></table>"
+        st.html(scorer_html)
+    else:
+        st.info("Goalscorer data is not yet available. It will appear once matches begin.")
+
+# --- Tab 4: Teams & Lineups ---
+with tab_lineups:
+    st.subheader("📋 World Cup 2026 Teams & Lineups")
+    st.write("Browse team rosters, qualified squad profiles, head coaches, and historic World Cup records.")
+    
+    # Load teams data
+    teams_data_path = "teams_data.json"
+    if os.path.exists(teams_data_path):
+        import json
+        with open(teams_data_path, "r", encoding="utf-8") as f:
+            teams_data = json.load(f)
+            
+        # Get list of teams in alphabetical order of database names
+        teams_list = sorted([t["db_name"] for t in teams_data])
+        
+        selected_team_name = st.selectbox("🔍 Select a Team Profile:", teams_list, index=0)
+        
+        # Find selected team object
+        team = next((t for t in teams_data if t["db_name"] == selected_team_name), None)
+        
+        if team:
+            # Let's show team card header
+            st.html("<div style='margin-top:15px;'></div>")
+            
+            # Load local flag banner image directly as a full-width cover photo
+            flag_path = team["flag_image_path"]
+            if os.path.exists(flag_path):
+                st.image(flag_path, use_container_width=True)
+            else:
+                st.warning("Banner image not found")
+                
+            st.markdown(f"""
+            <div style='background:rgba(13, 27, 62, 0.45); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 12px; padding: 20px; margin-top: 15px;'>
+                <h3 style='color:#fbbf24; margin:0 0 10px 0; font-size:1.8rem;'>{team['db_name']}</h3>
+                <p style='margin:6px 0; color:#e2e8f0; font-size:1rem;'>👔 <b>Head Coach:</b> <span style='color:#fbbf24;'>{team['coach']}</span></p>
+                <p style='margin:6px 0; color:#e2e8f0; font-size:1rem;'>🏆 <b>World Cup Appearances:</b> {team['appearances']}</p>
+                <p style='margin:6px 0; color:#e2e8f0; font-size:1rem;'>🥇 <b>Best Result:</b> {team['best_result']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+                
+            # History Section in expander or card
+            st.markdown(f"""
+            <div style='background:rgba(13, 27, 62, 0.3); border: 1px solid rgba(251, 191, 36, 0.15); border-radius: 12px; padding: 15px; margin-top: 15px; margin-bottom: 25px;'>
+                <h4 style='color:#fbbf24; margin:0 0 8px 0; font-size:1.1rem;'>📖 World Cup History & Profile</h4>
+                <p style='margin:0; color:#cbd5e1; font-size:0.92rem; line-height:1.5;'>{team['history']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Player Lineups Grid
+            st.markdown("<h4 style='color:#fbbf24; margin-bottom:15px;'>⚽ Official Squad Roster</h4>", unsafe_allow_html=True)
+            
+            gk, df, mf, fw = team["goalkeepers"], team["defenders"], team["midfielders"], team["forwards"]
+            
+            # Four columns layout
+            col_gk, col_df, col_mf, col_fw = st.columns(4)
+            
+            with col_gk:
+                gk_html = "<br>".join([f"• {p}" for p in gk]) if gk else "No players listed"
+                st.markdown(f"""
+                <div style='background:rgba(13, 27, 62, 0.45); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 15px; min-height: 420px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);'>
+                    <h5 style='color:#fbbf24; text-align:center; border-bottom:1px solid rgba(251,191,36,0.25); padding-bottom:8px; margin-top:0; margin-bottom:12px;'>🧤 Goalkeepers ({len(gk)})</h5>
+                    <div style='color:#cbd5e1; font-size:0.88rem; line-height:1.6;'>{gk_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with col_df:
+                df_html = "<br>".join([f"• {p}" for p in df]) if df else "No players listed"
+                st.markdown(f"""
+                <div style='background:rgba(13, 27, 62, 0.45); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 15px; min-height: 420px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);'>
+                    <h5 style='color:#fbbf24; text-align:center; border-bottom:1px solid rgba(251,191,36,0.25); padding-bottom:8px; margin-top:0; margin-bottom:12px;'>🛡️ Defenders ({len(df)})</h5>
+                    <div style='color:#cbd5e1; font-size:0.88rem; line-height:1.6;'>{df_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with col_mf:
+                mf_html = "<br>".join([f"• {p}" for p in mf]) if mf else "No players listed"
+                st.markdown(f"""
+                <div style='background:rgba(13, 27, 62, 0.45); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 15px; min-height: 420px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);'>
+                    <h5 style='color:#fbbf24; text-align:center; border-bottom:1px solid rgba(251,191,36,0.25); padding-bottom:8px; margin-top:0; margin-bottom:12px;'>⚙️ Midfielders ({len(mf)})</h5>
+                    <div style='color:#cbd5e1; font-size:0.88rem; line-height:1.6;'>{mf_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            with col_fw:
+                fw_html = "<br>".join([f"• {p}" for p in fw]) if fw else "No players listed"
+                st.markdown(f"""
+                <div style='background:rgba(13, 27, 62, 0.45); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 12px; padding: 15px; min-height: 420px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);'>
+                    <h5 style='color:#fbbf24; text-align:center; border-bottom:1px solid rgba(251,191,36,0.25); padding-bottom:8px; margin-top:0; margin-bottom:12px;'>⚡ Forwards ({len(fw)})</h5>
+                    <div style='color:#cbd5e1; font-size:0.88rem; line-height:1.6;'>{fw_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            st.html("<div style='margin-bottom:30px;'></div>")
+    else:
+        st.error("Teams and lineups data file not found. Please contact the administrator.")
+
+# --- Tab 4: Admin Controls (Only if Admin logged in) ---
 if st.session_state.username == "admin" and tab_admin:
     with tab_admin[0]:
         st.subheader("Tournament Admin Controls")

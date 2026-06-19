@@ -1,0 +1,2065 @@
+[
+  {
+    "team_name_html": "Germany",
+    "db_name": "Germany",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\germany.webp",
+    "coach": "Julian Nagelsmann",
+    "appearances": 20,
+    "best_result": "Winners (1954, 1974, 1990, 2014)",
+    "history": "One of the most successful footballing nations of all time. Germany has won the World Cup four times and reached the finals a record eight times. They are known for their tactical organization and tournament resilience.",
+    "goalkeepers": [
+      "Manuel Neuer",
+      "Oliver Baumann",
+      "Alexander Nübel"
+    ],
+    "defenders": [
+      "Antonio Rüdiger",
+      "Waldemar Anton",
+      "Jonathan Tah",
+      "Joshua Kimmich",
+      "Nico Schlotterbeck",
+      "Nathaniel Brown",
+      "David Raum",
+      "Malick Thiaw"
+    ],
+    "midfielders": [
+      "Aleksandar Pavlović",
+      "Leon Goretzka",
+      "Jamie Leweling",
+      "Jamal Musiala",
+      "Pascal Groß",
+      "Angelo Stiller",
+      "Florian Wirtz",
+      "Leroy Sané",
+      "Nadiem Amiri",
+      "Felix Nmecha",
+      "Lennart Karl"
+    ],
+    "forwards": [
+      "Kai Havertz",
+      "Nick Woltemade",
+      "Maximilian Beier",
+      "Deniz Undav"
+    ]
+  },
+  {
+    "team_name_html": "England",
+    "db_name": "England",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\england.webp",
+    "coach": "Thomas Tuchel",
+    "appearances": 16,
+    "best_result": "Winners (1966)",
+    "history": "England won their sole World Cup in 1966 on home soil. In recent tournaments, they reached the semi-finals in 2018 and quarter-finals in 2022. They enter 2026 as one of the heavy favorites with a star-studded squad.",
+    "goalkeepers": [
+      "Jordan Pickford",
+      "Dean Henderson",
+      "James Trafford"
+    ],
+    "defenders": [
+      "Ezri Konsa",
+      "Nico O'Reilly",
+      "John Stones",
+      "Marc Guéhi",
+      "Valentino Livramento",
+      "Daniel Burn",
+      "Reece James",
+      "Djed Spence",
+      "Jarell Quansah"
+    ],
+    "midfielders": [
+      "Declan Rice",
+      "Elliot Anderson",
+      "Jude Bellingham",
+      "Jordan Henderson",
+      "Kobbie Mainoo",
+      "Morgan Rogers",
+      "Eberechi Eze"
+    ],
+    "forwards": [
+      "Bukayo Saka",
+      "Harry Kane",
+      "Marcus Rashford",
+      "Anthony Gordon",
+      "Oliver Watkins",
+      "Noni Madueke",
+      "Ivan Toney"
+    ]
+  },
+  {
+    "team_name_html": "Austria",
+    "db_name": "Austria",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\austria.webp",
+    "coach": "Ralf Rangnick",
+    "appearances": 7,
+    "best_result": "Third Place (1954)",
+    "history": "Austria experienced their golden era in the 1930s and 1950s, finishing third in 1954. Under Ralf Rangnick, they have adopted a high-energy pressing style that makes them a dangerous opponent.",
+    "goalkeepers": [
+      "Alexander Schlager",
+      "Florian Wiegele",
+      "Patrick Pentz"
+    ],
+    "defenders": [
+      "David Affengruber",
+      "Kevin Danso",
+      "Stefan Posch",
+      "David Alaba",
+      "Philipp Lienhart",
+      "Phillip Mwene",
+      "Marco Friedl",
+      "Michael Svoboda"
+    ],
+    "midfielders": [
+      "Xaver Schlager",
+      "Nicolas Seiwald",
+      "Marcel Sabitzer",
+      "Florian Grillitsch",
+      "Carney Chukwuemeka",
+      "Romano Schmid",
+      "Christoph Baumgartner",
+      "Konrad Laimer",
+      "Alexander Prass",
+      "Paul Wanner",
+      "Alessandro Schöpf"
+    ],
+    "forwards": [
+      "Marko Arnautović",
+      "Michael Gregoritsch",
+      "Saša Kalajdžić",
+      "Patrick Wimmer"
+    ]
+  },
+  {
+    "team_name_html": "Belgium",
+    "db_name": "Belgium",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\belgium.webp",
+    "coach": "Rudi Garcia",
+    "appearances": 14,
+    "best_result": "Third Place (2018)",
+    "history": "Following their 'Golden Generation' which achieved third place in Russia 2018, Belgium is transitioning into a new era under Rudi Garcia, combining experienced veterans with young, explosive talent.",
+    "goalkeepers": [
+      "Thibaut Courtois",
+      "Senne Lammens",
+      "Mike Penders"
+    ],
+    "defenders": [
+      "Zeno Debast",
+      "Arthur Theate",
+      "Brandon Mechele",
+      "Maxim De Cuyper",
+      "Thomas Meunier",
+      "Koni De Winter",
+      "Joaquin Seys",
+      "Timothy Castagne",
+      "Nathan Ngoy"
+    ],
+    "midfielders": [
+      "Axel Witsel",
+      "Kevin De Bruyne",
+      "Youri Tielemans",
+      "Diego Moreira",
+      "Hans Vanaken",
+      "Alexis Saelemaekers",
+      "Nicolas Raskin",
+      "Amadou Onana"
+    ],
+    "forwards": [
+      "Romelu Lukaku",
+      "Leandro Trossard",
+      "Jérémy Doku",
+      "Dodi Lukebakio",
+      "Charles De Ketelaere",
+      "Matías Fernández-Pardo"
+    ]
+  },
+  {
+    "team_name_html": "Bosnia &amp; Herzegovina",
+    "db_name": "Bosnia &amp; Herzegovina",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\bosnia.webp",
+    "coach": "Head Coach",
+    "appearances": 1,
+    "best_result": "Group Stage",
+    "history": "Qualified for the FIFA World Cup 2026.",
+    "goalkeepers": [
+      "Nikola Vasilj",
+      "Mladen Jurkas",
+      "Martin Zlomislić"
+    ],
+    "defenders": [
+      "Nihad Mujakić",
+      "Dennis Hadžikadunic",
+      "Tarik Muharemović",
+      "Sead Kolašinac",
+      "Amar Dedić",
+      "Nikola Katić",
+      "Stjepan Radeljić",
+      "Nidal Čelik"
+    ],
+    "midfielders": [
+      "Benjamin Tahirović",
+      "Armin Gigović",
+      "Ivan Bašić",
+      "Ivan Šunjić",
+      "Amar Memić",
+      "Amir Hadžiahmetović",
+      "Dženis Burnić",
+      "Ermin Mahmić"
+    ],
+    "forwards": [
+      "Samed Bazdar",
+      "Ermedin Demirović",
+      "Edin Džeko",
+      "Kerim Alajbegović",
+      "Esmir Bajraktarević",
+      "Haris Tabaković",
+      "Jovo Lukić"
+    ]
+  },
+  {
+    "team_name_html": "Croatia",
+    "db_name": "Croatia",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\croatia.webp",
+    "coach": "Zlatko Dalić",
+    "appearances": 6,
+    "best_result": "Runners-up (2018)",
+    "history": "An incredible tournament team, Croatia finished third in 1998, runners-up in 2018, and third in 2022. With talisman Luka Modrić leading the squad, they remain a world-class force.",
+    "goalkeepers": [
+      "Dominik Livaković",
+      "Ivor Pandur",
+      "Dominik Kotarski"
+    ],
+    "defenders": [
+      "Josip Stanišić",
+      "Marin Pongračić",
+      "Joško Gvardiol",
+      "Duje Čaleta-Car",
+      "Josip Šutalo",
+      "Kristijan Jakić",
+      "Luka Vušković",
+      "Martin Erlić"
+    ],
+    "midfielders": [
+      "Nikola Moro",
+      "Mateo Kovačić",
+      "Luka Modrić",
+      "Nikola Vlašić",
+      "Mario Pašalić",
+      "Martin Baturina",
+      "Petar Sučić",
+      "Toni Fruk",
+      "Luka Sučić"
+    ],
+    "forwards": [
+      "Andrej Kramarić",
+      "Ante Budimir",
+      "Ivan Perišić",
+      "Igor Matanović",
+      "Marco Pašalić",
+      "Petar Musa"
+    ]
+  },
+  {
+    "team_name_html": "Scotland",
+    "db_name": "Scotland",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\scotland.webp",
+    "coach": "Steve Clarke",
+    "appearances": 8,
+    "best_result": "Group Stage (multiple times)",
+    "history": "A proud football nation, Scotland has qualified for the World Cup eight times but has never advanced past the group stage. They are backed by passionate supporters and a tight-knit squad.",
+    "goalkeepers": [
+      "Angus Gunn",
+      "Liam Kelly",
+      "Craig Gordon"
+    ],
+    "defenders": [
+      "Aaron Hickey",
+      "Andy Robertson",
+      "Grant Hanley",
+      "Kieran Tierney",
+      "Jack Hendry",
+      "John Souttar",
+      "Dominic Hyam",
+      "Nathan Patterson",
+      "Anthony Ralston",
+      "Scott McKenna"
+    ],
+    "midfielders": [
+      "Scott McTominay",
+      "John McGinn",
+      "Tyler Fletcher",
+      "Ryan Christie",
+      "Lewis Ferguson",
+      "Kenny McLean"
+    ],
+    "forwards": [
+      "Lyndon Dykes",
+      "Che Adams",
+      "Ross Stewart",
+      "Ben Gannon-Doak",
+      "George Hirst",
+      "Lawrence Shankland",
+      "Findlay Curtis"
+    ]
+  },
+  {
+    "team_name_html": "Spain",
+    "db_name": "Spain",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\spain.webp",
+    "coach": "Luis de la Fuente",
+    "appearances": 16,
+    "best_result": "Winners (2010)",
+    "history": "Spain won the tournament in 2010 with their famous tiki-taka style. Under Luis de la Fuente, they won Euro 2024 and are playing a faster, more direct brand of possession football.",
+    "goalkeepers": [
+      "David Raya",
+      "Joan García",
+      "Unai Simón"
+    ],
+    "defenders": [
+      "Marc Pubill",
+      "Álex Grimaldo",
+      "Eric García",
+      "Marcos Llorente",
+      "Pedro Porro",
+      "Aymeric Laporte",
+      "Pau Cubarsí",
+      "Marc Cucurella"
+    ],
+    "midfielders": [
+      "Mikel Merino",
+      "Fabián Ruiz",
+      "Pablo Gavira",
+      "Álex Baena",
+      "Rodrigo Hernández",
+      "Martín Zubimendi",
+      "Pedro López"
+    ],
+    "forwards": [
+      "Ferran Torres",
+      "Dani Olmo",
+      "Yeremy Pino",
+      "Nico Williams",
+      "Lamine Yamal",
+      "Mikel Oyarzabal",
+      "Víctor Muñoz",
+      "Borja Iglesias"
+    ]
+  },
+  {
+    "team_name_html": "France",
+    "db_name": "France",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\france.webp",
+    "coach": "Didier Deschamps",
+    "appearances": 16,
+    "best_result": "Winners (1998, 2018)",
+    "history": "Two-time world champions and 2022 runners-up, France has reached the finals in three of the last seven World Cups. Led by Didier Deschamps and superstar Kylian Mbappé, they remain a dominant force.",
+    "goalkeepers": [
+      "Brice Samba",
+      "Mike Maignan",
+      "Robin Risser"
+    ],
+    "defenders": [
+      "Malo Gusto",
+      "Lucas Digne",
+      "Dayot Upamecano",
+      "Jules Koundé",
+      "Ibrahima Konaté",
+      "William Saliba",
+      "Théo Hernandez",
+      "Lucas Hernandez",
+      "Maxence Lacroix"
+    ],
+    "midfielders": [
+      "Manu Koné",
+      "Aurélien Tchouaméni",
+      "N'Golo Kanté",
+      "Adrien Rabiot",
+      "Warren Zaïre-Emery",
+      "Rayan Cherki",
+      "Maghnes Akliouche"
+    ],
+    "forwards": [
+      "Ousmane Dembélé",
+      "Marcus Thuram",
+      "Kylian Mbappé",
+      "Michaël Olise",
+      "Bradley Barcola",
+      "Désiré Doué",
+      "Jean-Philippe Mateta"
+    ]
+  },
+  {
+    "team_name_html": "Norway",
+    "db_name": "Norway",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\norway.webp",
+    "coach": "Ståle Solbakken",
+    "appearances": 3,
+    "best_result": "Round of 16 (1998)",
+    "history": "Norway returns to the World Cup for the first time since 1998. Boasting world-class attackers Erling Haaland and Martin Ødegaard, they are eager to make an impact on the global stage.",
+    "goalkeepers": [
+      "Ørjan Nyland",
+      "Sander Tangvik",
+      "Egil Selvik"
+    ],
+    "defenders": [
+      "Kristoffer Ajer",
+      "Leo Østigård",
+      "David Wolfe",
+      "Fredrik Bjørkan",
+      "Marcus Pedersen",
+      "Torbjørn Heggem",
+      "Sondre Langas",
+      "Henrik Falchener"
+    ],
+    "midfielders": [
+      "Morten Thorsby",
+      "Patrick Berg",
+      "Sander Berge",
+      "Martin Ødegaard",
+      "Fredrik Aursnes",
+      "Kristian Thorstvedt",
+      "Thelo Aasgaard",
+      "Andreas Schjelderup",
+      "Oscar Bobb",
+      "Jens Hauge"
+    ],
+    "forwards": [
+      "Alexander Sørloth",
+      "Erling Haaland",
+      "Jørgen Larsen",
+      "Antonio Nusa",
+      "Julian Ryerson"
+    ]
+  },
+  {
+    "team_name_html": "Netherlands",
+    "db_name": "Netherlands",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\netherlands.webp",
+    "coach": "Ronald Koeman",
+    "appearances": 11,
+    "best_result": "Runners-up (1974, 1978, 2010)",
+    "history": "Famous for 'Total Football', the Oranje have finished as runners-up three times without winning. Ronald Koeman's squad mixes solid defensive options with highly technical midfielders.",
+    "goalkeepers": [
+      "Bart Verbruggen",
+      "Robin Roefs",
+      "Mark Flekken"
+    ],
+    "defenders": [
+      "Jurriën Timber",
+      "Virgil van Dijk",
+      "Nathan Aké",
+      "Jan-Paul van Hecke",
+      "Mats Wieffer",
+      "Micky van de Ven",
+      "Denzel Dumfries",
+      "Jorrel Hato"
+    ],
+    "midfielders": [
+      "Marten de Roon",
+      "Justin Kluivert",
+      "Ryan Gravenberch",
+      "Tijjani Reijnders",
+      "Guus Til",
+      "Teun Koopmeiners",
+      "Frenkie de Jong",
+      "Quinten Timber"
+    ],
+    "forwards": [
+      "Wout Weghorst",
+      "Memphis Depay",
+      "Cody Gakpo",
+      "Noa Lang",
+      "Donyell Malen",
+      "Brian Brobbey",
+      "Crysencio Summerville"
+    ]
+  },
+  {
+    "team_name_html": "Portugal",
+    "db_name": "Portugal",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\portugal.webp",
+    "coach": "Roberto Martínez",
+    "appearances": 8,
+    "best_result": "Third Place (1966)",
+    "history": "Led by the legendary Cristiano Ronaldo in his final tournaments, Portugal boasts one of the deepest squads in the world, combining elite playmakers and powerful defenders.",
+    "goalkeepers": [
+      "Diogo Costa",
+      "José Sá",
+      "Rui Silva"
+    ],
+    "defenders": [
+      "Nelson Semedo",
+      "Rúben Dias",
+      "Tomás Araújo",
+      "Diogo Dalot",
+      "Renato Veiga",
+      "Gonçalo Inácio",
+      "João Cancelo",
+      "Samu Costa",
+      "Nuno Mendes"
+    ],
+    "midfielders": [
+      "Matheus Nunes",
+      "Bruno Fernandes",
+      "Bernardo Silva",
+      "João Neves",
+      "Rúben Neves",
+      "Vítor Ferreira"
+    ],
+    "forwards": [
+      "Cristiano Ronaldo",
+      "Gonçalo Ramos",
+      "João Félix",
+      "Francisco Trincão",
+      "Rafael Leão",
+      "Pedro Neto",
+      "Gonçalo Guedes",
+      "Francisco Conceição"
+    ]
+  },
+  {
+    "team_name_html": "Sweden",
+    "db_name": "Sweden",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\sweden.webp",
+    "coach": "Jon Dahl Tomasson",
+    "appearances": 12,
+    "best_result": "Runners-up (1958)",
+    "history": "Sweden reached the final on home soil in 1958 and finished third in 1994. Under Danish coach Jon Dahl Tomasson, they play a fluid, attack-minded style led by star striker Viktor Gyökeres.",
+    "goalkeepers": [
+      "Jacob Zetterström",
+      "Viktor Johansson",
+      "Kristoffer Nordfeldt"
+    ],
+    "defenders": [
+      "Gustaf Lagerbielke",
+      "Victor Lindelöf",
+      "Isak Hien",
+      "Gabriel Gudmundsson",
+      "Herman Johansson",
+      "Daniel Svensson",
+      "Hjalmar Ekdal",
+      "Carl Starfelt",
+      "Eric Smith",
+      "Alexander Bernhardsson",
+      "Elliot Stroud"
+    ],
+    "midfielders": [
+      "Lucas Bergvall",
+      "Benjamin Nygren",
+      "Ken Sema",
+      "Jesper Karlström",
+      "Yasin Ayari",
+      "Mattias Svanberg",
+      "Besfort Zeneli"
+    ],
+    "forwards": [
+      "Alexander Isak",
+      "Anthony Elanga",
+      "Viktor Gyökeres",
+      "Gustaf Nilsson",
+      "Taha Ali"
+    ]
+  },
+  {
+    "team_name_html": "Switzerland",
+    "db_name": "Switzerland",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\switzerland.webp",
+    "coach": "Murat Yakin",
+    "appearances": 12,
+    "best_result": "Quarter-finals (1934, 1938, 1954)",
+    "history": "A model of consistency, Switzerland has reached the knockout stages in four of the last five World Cups. They are compact, resilient, and possess key leaders like Granit Xhaka.",
+    "goalkeepers": [
+      "Gregor Kobel",
+      "Yvon Mvogo",
+      "Marvin Keller"
+    ],
+    "defenders": [
+      "Miro Muheim",
+      "Silvan Widmer",
+      "Nico Elvedi",
+      "Manuel Akanji",
+      "Ricardo Rodríguez",
+      "Eray Cömert",
+      "Aurèle Amenda",
+      "Luca Jaquez"
+    ],
+    "midfielders": [
+      "Denis Zakaria",
+      "Remo Freuler",
+      "Johan Manzambi",
+      "Granit Xhaka",
+      "Ardon Jashari",
+      "Djibril Sow",
+      "Michel Aebischer",
+      "Fabian Rieder"
+    ],
+    "forwards": [
+      "Breel Embolo",
+      "Dan Ndoye",
+      "Christian Fassnacht",
+      "Rubén Vargas",
+      "Noah Okafor",
+      "Zeki Amdouni",
+      "Cédric Itten"
+    ]
+  },
+  {
+    "team_name_html": "Czechia",
+    "db_name": "Czechia",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\czechia.webp",
+    "coach": "Ivan Hašek",
+    "appearances": 9,
+    "best_result": "Runners-up (1934, 1962)",
+    "history": "As Czechoslovakia, they reached the World Cup final in 1934 and 1962. Playing under Czechia, they are a physical, hard-working side with clinical finishing upfront.",
+    "goalkeepers": [
+      "Matěj Kovář",
+      "Jindřich Stánek",
+      "Lukáš Horníček"
+    ],
+    "defenders": [
+      "David Zima",
+      "Tomáš Holeš",
+      "Robin Hranáč",
+      "Vladimír Coufal",
+      "Štěpán Chaloupek",
+      "Ladislav Krejčí",
+      "David Jurásek",
+      "Jaroslav Zelený",
+      "David Doudera"
+    ],
+    "midfielders": [
+      "Vladimír Darida",
+      "Lukáš Červ",
+      "Lukáš Provod",
+      "Michal Sadílek",
+      "Tomáš Souček",
+      "Alexandr Sojka",
+      "Hugo Šochůrek"
+    ],
+    "forwards": [
+      "Adam Hložek",
+      "Patrik Schick",
+      "Jan Kuchta",
+      "Mojmír Chytil",
+      "Pavel Šulc",
+      "Tomáš Chorý",
+      "Denis Višinský"
+    ]
+  },
+  {
+    "team_name_html": "Turkey",
+    "db_name": "Turkiye",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\turkey.webp",
+    "coach": "Vincenzo Montella",
+    "appearances": 2,
+    "best_result": "Third Place (2002)",
+    "history": "Turkiye famously finished third in 2002 in Korea/Japan. Boasting exceptional young talents like Arda Güler, Montella's squad plays a passionate and technically gifted style of football.",
+    "goalkeepers": [
+      "Mert Günok",
+      "Altay Bayındır",
+      "Uğurcan Çakır"
+    ],
+    "defenders": [
+      "Zeki Çelik",
+      "Merih Demiral",
+      "Çağlar Söyüncü",
+      "Eren Elmalı",
+      "Abdülkerim Bardakçı",
+      "Ozan Kabak",
+      "Mert Müldür",
+      "Ferdi Kadıoğlu",
+      "Samet Akaydın"
+    ],
+    "midfielders": [
+      "Salih Özcan",
+      "Orkun Kökcü",
+      "Hakan Çalhanoğlu",
+      "İsmail Yüksek",
+      "Kaan Ayhan"
+    ],
+    "forwards": [
+      "Kerem Aktürkoğlu",
+      "Arda Güler",
+      "Deniz Gül",
+      "Kenan Yıldız",
+      "İrfan Kahveci",
+      "Yunus Akgün",
+      "Barış Yılmaz",
+      "Oğuz Aydın",
+      "Can Uzun"
+    ]
+  },
+  {
+    "team_name_html": "Argentina",
+    "db_name": "Argentina",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\argentina.webp",
+    "coach": "Lionel Scaloni",
+    "appearances": 18,
+    "best_result": "Winners (1978, 1986, 2022)",
+    "history": "The defending World Cup champions after their epic victory in Qatar 2022. Led by Lionel Messi in his swansong and mastermind Lionel Scaloni, they aim to defend their crown.",
+    "goalkeepers": [
+      "Juan Musso",
+      "Gerónimo Rulli",
+      "Emiliano Martínez"
+    ],
+    "defenders": [
+      "Leonardo Balerdi",
+      "Nicolás Tagliafico",
+      "Gonzalo Montiel",
+      "Lisandro Martínez",
+      "Cristian Romero",
+      "Nicolás Otamendi",
+      "Facundo Medina",
+      "Nahuel Molina"
+    ],
+    "midfielders": [
+      "Leandro Paredes",
+      "Rodrigo de Paul",
+      "Valentín Barco",
+      "Giovani Lo Celso",
+      "Exequiel Palacios",
+      "Nicolás González",
+      "Alexis Mac Allister",
+      "Enzo Fernández"
+    ],
+    "forwards": [
+      "Julián Álvarez",
+      "Lionel Messi",
+      "Thiago Almada",
+      "Giuliano Simeone",
+      "Nicolás Paz",
+      "José López",
+      "Lautaro Martínez"
+    ]
+  },
+  {
+    "team_name_html": "Brazil",
+    "db_name": "Brazil",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\brazil.webp",
+    "coach": "Carlo Ancelotti",
+    "appearances": 22,
+    "best_result": "Winners (1958, 1962, 1970, 1994, 2002)",
+    "history": "The most successful nation in World Cup history with five titles, and the only nation to play in every single edition. Now led by legendary club manager Carlo Ancelotti, they target their sixth trophy.",
+    "goalkeepers": [
+      "Alisson Becker",
+      "Weverton Caldeira",
+      "Ederson Moraes"
+    ],
+    "defenders": [
+      "Wesley",
+      "Gabriel Magalhães",
+      "Marcos Corrêa",
+      "Alex Sandro",
+      "Danilo Luiz",
+      "Bremer",
+      "Léo Pereira",
+      "Douglas Santos",
+      "Roger Ibanez"
+    ],
+    "midfielders": [
+      "Carlos Casimiro",
+      "Bruno Guimarães",
+      "Fábio Tavares",
+      "Danilo Santos",
+      "Lucas Paquetá"
+    ],
+    "forwards": [
+      "Vinícius Júnior",
+      "Matheus Cunha",
+      "Neymar Santos",
+      "Raphael Belloli",
+      "Endrick Sousa",
+      "Luiz Henrique",
+      "Gabriel Martinelli",
+      "Igor Thiago",
+      "Rayan"
+    ]
+  },
+  {
+    "team_name_html": "Colombia",
+    "db_name": "Colombia",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\colombia.webp",
+    "coach": "Néstor Lorenzo",
+    "appearances": 6,
+    "best_result": "Quarter-finals (2014)",
+    "history": "Colombia played sensational football to reach the quarter-finals in 2014. Under Néstor Lorenzo, they went on a massive unbeaten run and play dynamic, high-tempo South American football.",
+    "goalkeepers": [
+      "David Ospina",
+      "Camilo Vargas",
+      "Álvaro Montero"
+    ],
+    "defenders": [
+      "Daniel Muñoz",
+      "Jhon Lucumí",
+      "Santiago Arias",
+      "Yerry Mina",
+      "Gustavo Puerta",
+      "Johan Mojica",
+      "Willer Ditta",
+      "Deiver Machado",
+      "Dávinson Sánchez"
+    ],
+    "midfielders": [
+      "Kevin Castaño",
+      "Richard Ríos",
+      "Jorge Carrascal",
+      "James Rodríguez",
+      "Jhon Arias",
+      "Juan Portilla",
+      "Jefferson Lerma",
+      "Juan Quintero"
+    ],
+    "forwards": [
+      "Luis Díaz",
+      "Jhon Córdoba",
+      "Juan Hernández",
+      "Leandro Campaz",
+      "Luis Suárez",
+      "Andrés Gómez"
+    ]
+  },
+  {
+    "team_name_html": "Ecuador",
+    "db_name": "Ecuador",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\ecuador.webp",
+    "coach": "Sebastián Beccacece",
+    "appearances": 4,
+    "best_result": "Round of 16 (2006)",
+    "history": "Ecuador is known for producing strong, athletic players. With a core of top-tier talent like Moisés Caicedo, they represent one of South America's most solid qualification contenders.",
+    "goalkeepers": [
+      "Hernán Galíndez",
+      "Moisés Ramírez",
+      "Gonzalo Valle"
+    ],
+    "defenders": [
+      "Félix Torres",
+      "Piero Hincapié",
+      "Joel Ordóñez",
+      "Willian Pacho",
+      "Pervis Estupiñán",
+      "Ángelo Preciado",
+      "Jackson Porozo",
+      "Yaimar Medina"
+    ],
+    "midfielders": [
+      "Jordy Alcívar",
+      "Anthony Valencia",
+      "Kendry Páez",
+      "Alan Minda",
+      "Pedro Vite",
+      "Denil Castillo",
+      "Alan Franco",
+      "Moisés Caicedo"
+    ],
+    "forwards": [
+      "John Yeboah",
+      "Kevin Rodríguez",
+      "Enner Valencia",
+      "Jordy Caicedo",
+      "Gonzalo Plata",
+      "Nilson Angulo",
+      "Jeremy Arévalo"
+    ]
+  },
+  {
+    "team_name_html": "Paraguay",
+    "db_name": "Paraguay",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\paraguay.webp",
+    "coach": "Gustavo Alfaro",
+    "appearances": 8,
+    "best_result": "Quarter-finals (2010)",
+    "history": "Paraguay reached the quarter-finals in 2010. Known historically for their rock-solid defensive lines, they have been revitalized under Gustavo Alfaro to claim a spot in the 2026 finals.",
+    "goalkeepers": [
+      "Roberto Fernández",
+      "Orlando Gill",
+      "Gastón Olveira"
+    ],
+    "defenders": [
+      "Gustavo Velázquez",
+      "Omar Alderete",
+      "Juan Cáceres",
+      "Fabián Balbuena",
+      "Junior Alonso",
+      "José Canale",
+      "Gustavo Gómez",
+      "Alexandro Maidana"
+    ],
+    "midfielders": [
+      "Ramón Sosa",
+      "Diego Gómez",
+      "Miguel Almirón",
+      "Mauricio",
+      "Andrés Cubas",
+      "Damián Bobadilla",
+      "Braian Ojeda",
+      "Matías Galarza",
+      "Gustavo Caballero"
+    ],
+    "forwards": [
+      "Antonio Sanabria",
+      "Alejandro Romero",
+      "Álex Arce",
+      "Julio Enciso",
+      "Gabriel Ávalos",
+      "Isidro Pitta"
+    ]
+  },
+  {
+    "team_name_html": "Uruguay",
+    "db_name": "Uruguay",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\uruguay.webp",
+    "coach": "Marcelo Bielsa",
+    "appearances": 14,
+    "best_result": "Winners (1930, 1950)",
+    "history": "Two-time winners of the World Cup, Uruguay is a historic powerhouse. Marcelo Bielsa has implemented his famous high-intensity, vertical pressing style, making them one of the most exciting teams in the tournament.",
+    "goalkeepers": [
+      "Sergio Rochet",
+      "Santiago Mele",
+      "Fernando Muslera"
+    ],
+    "defenders": [
+      "José Giménez",
+      "Sebastián Cáceres",
+      "Ronald Araújo",
+      "Guillermo Varela",
+      "Mathías Olivera",
+      "Matías Viña",
+      "Santiago Bueno"
+    ],
+    "midfielders": [
+      "Manuel Ugarte",
+      "Rodrigo Bentancur",
+      "Nicolás de la Cruz",
+      "Federico Valverde",
+      "Giorgian de Arrascaeta",
+      "Agustín Canobbio",
+      "Emiliano Martínez",
+      "Maximiliano Araújo",
+      "Joaquín Piquerez",
+      "Juan Sanabria",
+      "Rodrigo Zalazar"
+    ],
+    "forwards": [
+      "Darwin Núñez",
+      "Facundo Pellistri",
+      "Brian Rodríguez",
+      "Rodrigo Aguirre",
+      "Federico Viñas"
+    ]
+  },
+  {
+    "team_name_html": "Canada",
+    "db_name": "Canada",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\canada.webp",
+    "coach": "Jesse Marsch",
+    "appearances": 2,
+    "best_result": "Group Stage (1986, 2022)",
+    "history": "As co-hosts, Canada makes their third appearance. Under Jesse Marsch, they have developed a high-pressing, cohesive system designed to leverage home support and make history by reaching the knockouts.",
+    "goalkeepers": [
+      "Dayne St. Clair",
+      "Maxime Crépeau",
+      "Owen Goodman"
+    ],
+    "defenders": [
+      "Alistair Johnston",
+      "Alfie Jones",
+      "Luc de Fougerolles",
+      "Joel Waterman",
+      "Derek Cornelius",
+      "Moïse Bombito",
+      "Alphonso Davies",
+      "Richie Laryea",
+      "Niko Sigur"
+    ],
+    "midfielders": [
+      "Mathieu Choinière",
+      "Stephen Eustaquio",
+      "Ismaël Koné",
+      "Liam Millar",
+      "Jacob Shaffelburg",
+      "Jonathan Osorio",
+      "Nathan Saliba",
+      "Marcelo Flores"
+    ],
+    "forwards": [
+      "Cyle Larin",
+      "Jonathan David",
+      "Tani Oluwaseyi",
+      "Tajon Buchanan",
+      "Ali Ahmed",
+      "Promise David"
+    ]
+  },
+  {
+    "team_name_html": "USA",
+    "db_name": "United States",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\united-states.webp",
+    "coach": "Mauricio Pochettino",
+    "appearances": 11,
+    "best_result": "Third Place (1930)",
+    "history": "Co-hosts USA have high expectations for 2026. Under world-renowned manager Mauricio Pochettino, they possess a talented pool of European-based players and look to go deep on home soil.",
+    "goalkeepers": [
+      "Matt Turner",
+      "Matt Freese",
+      "Chris Brady"
+    ],
+    "defenders": [
+      "Sergiño Dest",
+      "Chris Richards",
+      "Antonee Robinson",
+      "Auston Trusty",
+      "Miles Robinson",
+      "Tim Ream",
+      "Alex Freeman",
+      "Max Arfsten",
+      "Mark McKenzie",
+      "Joe Scally"
+    ],
+    "midfielders": [
+      "Tyler Adams",
+      "Giovanni Reyna",
+      "Weston McKennie",
+      "Sebastian Berhalter",
+      "Cristian Roldán",
+      "Malik Tillman"
+    ],
+    "forwards": [
+      "Ricardo Pepi",
+      "Christian Pulisic",
+      "Brenden Aaronson",
+      "Haji Wright",
+      "Folarin Balogun",
+      "Timothy Weah",
+      "Alex Zendejas"
+    ]
+  },
+  {
+    "team_name_html": "Mexico",
+    "db_name": "Mexico",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\mexico.webp",
+    "coach": "Javier Aguirre",
+    "appearances": 17,
+    "best_result": "Quarter-finals (1970, 1986)",
+    "history": "Co-hosts Mexico have reached the Round of 16 in seven consecutive tournaments (1994-2018). Under the experienced Javier Aguirre, El Tri hopes to break the barrier and reach the quarter-finals or beyond.",
+    "goalkeepers": [
+      "Raúl Rangel",
+      "Carlos Acevedo",
+      "Guillermo Ochoa"
+    ],
+    "defenders": [
+      "Jorge Sánchez",
+      "César Montes",
+      "Edson Álvarez",
+      "Johan Vásquez",
+      "Israel Reyes",
+      "Mateo Chávez",
+      "Jesús Gallardo"
+    ],
+    "midfielders": [
+      "Erik Lira",
+      "Luis Romo",
+      "Álvaro Fidalgo",
+      "Orbelín Piñeda",
+      "Obed Vargas",
+      "Gilberto Mora",
+      "Luis Chávez",
+      "Brian Gutiérrez"
+    ],
+    "forwards": [
+      "Raúl Jiménez",
+      "Alexis Vega",
+      "Santiago Giménez",
+      "Armando González",
+      "Julián Quiñones",
+      "César Huerta",
+      "Guillermo Martínez",
+      "Roberto Alvarado"
+    ]
+  },
+  {
+    "team_name_html": "Curaçao",
+    "db_name": "Curacao",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\curaçao.webp",
+    "coach": "Dick Advocaat",
+    "appearances": 0,
+    "best_result": "Debut (2026)",
+    "history": "The tiny Caribbean island nation achieved a historic first-ever qualification for the World Cup. Under veteran manager Dick Advocaat, Curaçao is the tournament's ultimate underdog.",
+    "goalkeepers": [
+      "Eloy Room",
+      "Tyrick Bodak",
+      "Trevor Doornbusch"
+    ],
+    "defenders": [
+      "Shurandy Sambo",
+      "Jurien Gaari",
+      "Roshon van Eijma",
+      "Sherel Floranus",
+      "Armando Obispo",
+      "Joshua Brenet",
+      "Riechedly Bazoer",
+      "Deveron Fonville"
+    ],
+    "midfielders": [
+      "Godfried Roemeratoe",
+      "Juninho Bacuna",
+      "Livano Comenencia",
+      "Leandro Bacuna",
+      "Arjany Martha",
+      "Tahith Chong",
+      "Kevin Felida"
+    ],
+    "forwards": [
+      "Jürgen Locadia",
+      "Jeremy Antonisse",
+      "Sontje Hansen",
+      "Tyrese Noslin",
+      "Kenji Gorre",
+      "Jearl Margaritha",
+      "Brandley Kuwas",
+      "Gervane Kastaneer"
+    ]
+  },
+  {
+    "team_name_html": "Haiti",
+    "db_name": "Haiti",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\haiti.webp",
+    "coach": "Sébastien Migné",
+    "appearances": 1,
+    "best_result": "Group Stage (1974)",
+    "history": "Haiti returns to the World Cup for the first time since 1974. They play a fast, athletic counter-attacking game and secured qualification through a strong regional campaign.",
+    "goalkeepers": [
+      "Johny Placide",
+      "Alexandre Pierre",
+      "Josué Duverger"
+    ],
+    "defenders": [
+      "Carlens Arcus",
+      "Keeto Thermoncy",
+      "Ricardo Ade",
+      "Hannes Delcroix",
+      "Martin Expérience",
+      "Markhus Lacroix",
+      "Jean-Kevin Duverne",
+      "Wilguens Paugain"
+    ],
+    "midfielders": [
+      "Carl Sainte",
+      "Jean-Ricner Bellegarde",
+      "Leverton Pierre",
+      "Danley Jean Jacques",
+      "Dominique Simon",
+      "Woodensky Pierre"
+    ],
+    "forwards": [
+      "Derrick Etienne",
+      "Duckens Nazon",
+      "Louicius Deedson",
+      "Ruben Providence",
+      "Lenny Joseph",
+      "Wilson Isidor",
+      "Yassin Fortune",
+      "Frantzdy Pierrot"
+    ]
+  },
+  {
+    "team_name_html": "Panama",
+    "db_name": "Panama",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\panama.webp",
+    "coach": "Thomas Christiansen",
+    "appearances": 1,
+    "best_result": "Group Stage (2018)",
+    "history": "Panama made their World Cup debut in 2018. Under Spanish-Danish coach Thomas Christiansen, they play a patient, possession-oriented style that has made them CONCACAF contenders.",
+    "goalkeepers": [
+      "Luis Mejía",
+      "César Samudio",
+      "Orlando Mosquera"
+    ],
+    "defenders": [
+      "César Blackman",
+      "José Córdoba",
+      "Fidel Escobar",
+      "Edgardo Farina",
+      "Jiovany Ramos",
+      "Carlos Harvey",
+      "Eric Davis",
+      "Andrés Andrade",
+      "Amir Murillo",
+      "Roderick Miller",
+      "Jorge Gutiérrez"
+    ],
+    "midfielders": [
+      "Cristian Martínez",
+      "José Rodríguez",
+      "Adalberto Carrasquilla",
+      "Ismael Díaz",
+      "Edgar Bárcenas",
+      "Alberto Quintero",
+      "Aníbal Godoy",
+      "César Yanis"
+    ],
+    "forwards": [
+      "Tomás Rodríguez",
+      "José Fajardo",
+      "Cecilio Waterman",
+      "Azarías Londoño"
+    ]
+  },
+  {
+    "team_name_html": "South Africa",
+    "db_name": "South Africa",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\south-africa.webp",
+    "coach": "Hugo Broos",
+    "appearances": 3,
+    "best_result": "Group Stage (1998, 2002, 2010)",
+    "history": "South Africa hosted the tournament in 2010. Managed by veteran coach Hugo Broos, Bafana Bafana returns to the world stage with a well-organized squad based largely on domestic champions Mamelodi Sundowns.",
+    "goalkeepers": [
+      "Ronwen Williams",
+      "Sipho Chaine",
+      "Ricardo Goss"
+    ],
+    "defenders": [
+      "Thabang Matuludi",
+      "Khulumani Ndamane",
+      "Aubrey Modiba",
+      "Mbekezeli Mbokazi",
+      "Samukelo Kabini",
+      "Nkosinathi Sibisi",
+      "Khuliso Mudau",
+      "Ime Okon",
+      "Olwethu Makhanya",
+      "Bradley Cross"
+    ],
+    "midfielders": [
+      "Teboho Mokoena",
+      "Thalente Mbatha",
+      "Themba Zwane",
+      "Sphephelo Sithole",
+      "Jayden Adams"
+    ],
+    "forwards": [
+      "Oswin Appollis",
+      "Tshepang Moremi",
+      "Lyle Foster",
+      "Relebohile Mofokeng",
+      "Thapelo Maseko",
+      "Iqraam Rayners",
+      "Evidence Makgopa",
+      "Kamogelo Sebelebele"
+    ]
+  },
+  {
+    "team_name_html": "Algeria",
+    "db_name": "Algeria",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\algeria.webp",
+    "coach": "Vladimir Petković",
+    "appearances": 4,
+    "best_result": "Round of 16 (2014)",
+    "history": "Algeria famously pushed Germany to extra time in the Round of 16 in 2014. Vladimir Petković has restructured the Fennec Foxes, implementing a solid defensive framework and utilizing creative wingers.",
+    "goalkeepers": [
+      "Melvin Mastil",
+      "Oussama Benbot",
+      "Luca Zidane"
+    ],
+    "defenders": [
+      "Aïssa Mandi",
+      "Achraf Abada",
+      "Mohamed Tougaï",
+      "Zineddine Belaïd",
+      "Jaouen Hadjam",
+      "Rayan Aït-Nouri",
+      "Rafik Belghali",
+      "Ramy Bensebaini",
+      "Samir Chergui"
+    ],
+    "midfielders": [
+      "Ramiz Zerrouki",
+      "Houssem Aouar",
+      "Fares Chaïbi",
+      "Hicham Boudaoui",
+      "Nabil Bentaleb",
+      "Ibrahim Maza",
+      "Yassine Titraoui"
+    ],
+    "forwards": [
+      "Riyad Mahrez",
+      "Amine Gouiri",
+      "Anis Hadj Moussa",
+      "Nadhir Benbouali",
+      "Mohamed Amoura",
+      "Adil Boulbina",
+      "Fares Ghedjemis"
+    ]
+  },
+  {
+    "team_name_html": "Cape Verde",
+    "db_name": "Cabo Verde",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\cape-verde.webp",
+    "coach": "Bubista",
+    "appearances": 0,
+    "best_result": "Debut (2026)",
+    "history": "Known as the Blue Sharks, Cabo Verde qualified for their first-ever FIFA World Cup in 2026. Under local coach Bubista, they are known for their team cohesion and technical skills.",
+    "goalkeepers": [
+      "Vozinha",
+      "Márcio Rosa",
+      "CJ Dos Santos"
+    ],
+    "defenders": [
+      "Stopira",
+      "Diney Borges",
+      "Pico Lopes",
+      "Logan Costa",
+      "Sidny Cabral",
+      "Steven Moreira",
+      "Wagner Pina",
+      "Kelvin Pires"
+    ],
+    "midfielders": [
+      "Kevin Pina",
+      "Jovane Cabral",
+      "João Paulo",
+      "Jamiro Monteiro",
+      "Garry Rodrigues",
+      "Deroy Duarte",
+      "Laros Duarte",
+      "Yannick Semedo",
+      "Willy Semedo",
+      "Telmo Arcanjo",
+      "Nuno da Costa",
+      "Hélio Varela"
+    ],
+    "forwards": [
+      "Gilson Benchimol",
+      "Dailon Livramento",
+      "Ryan Mendes"
+    ]
+  },
+  {
+    "team_name_html": "Ivory Coast",
+    "db_name": "Cote d'Ivoire",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\ivory-coast.webp",
+    "coach": "Emerse Faé",
+    "appearances": 3,
+    "best_result": "Group Stage (2006, 2010, 2014)",
+    "history": "Winners of the 2023 Africa Cup of Nations, Côte d'Ivoire are one of Africa's strongest sides. Managed by Emerse Faé, they possess elite midfield energy and dangerous attacking wingers.",
+    "goalkeepers": [
+      "Yahia Fofana",
+      "Mohamed Koné",
+      "Alban Lafont"
+    ],
+    "defenders": [
+      "Ousmane Diomandé",
+      "Ghislain Konan",
+      "Wilfried Singo",
+      "Odilon Kossounou",
+      "Christopher Operi",
+      "Guela Doué",
+      "Emmanuel Agbadou",
+      "Evan Ndicka"
+    ],
+    "midfielders": [
+      "Jean Séri",
+      "Seko Fofana",
+      "Franck Kessié",
+      "Ibrahim Sangaré",
+      "Parfait Guiagon",
+      "Christ Oulai"
+    ],
+    "forwards": [
+      "Ange-Yoan Bonny",
+      "Simon Adingra",
+      "Yan Diomandé",
+      "Elye Wahi",
+      "Oumar Diakité",
+      "Amad Diallo",
+      "Nicolas Pépé",
+      "Evann Guessand",
+      "Bazoumana Touré"
+    ]
+  },
+  {
+    "team_name_html": "Egypt",
+    "db_name": "Egypt",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\egypt.webp",
+    "coach": "Hossam Hassan",
+    "appearances": 3,
+    "best_result": "Group Stage (1934, 1990, 2018)",
+    "history": "The most successful nation in African championship history. Led by national legend Hossam Hassan and superstar captain Mohamed Salah, Egypt is looking to secure their first-ever World Cup win.",
+    "goalkeepers": [
+      "Mohamed Elshenawy",
+      "Mahdy Soliman",
+      "Mostafa Shoubir",
+      "Mohamed Alaa"
+    ],
+    "defenders": [
+      "Yasser Ibrahim",
+      "Mohamed Hany",
+      "Hossam Abdelmaguid",
+      "Ramy Rabia",
+      "Mohamed Abdelmoneim",
+      "Ahmed Fatouh",
+      "Karim Hafez",
+      "Tarek Alaa"
+    ],
+    "midfielders": [
+      "Emam Ashour",
+      "Mostafa Zico",
+      "Hamdy Fathy",
+      "Mohanad Lashin",
+      "Nabil Donga",
+      "Marawan Attia",
+      "Mahmoud Saber"
+    ],
+    "forwards": [
+      "Mahmoud Hassan",
+      "Hamza Abdelkarim",
+      "Mohamed Salah",
+      "Haissem Hassan",
+      "Ibrahim Adel",
+      "Omar Marmoush",
+      "Mahmoud Hamdy"
+    ]
+  },
+  {
+    "team_name_html": "Ghana",
+    "db_name": "Ghana",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\ghana.webp",
+    "coach": "Otto Addo",
+    "appearances": 4,
+    "best_result": "Quarter-finals (2010)",
+    "history": "Ghana famously reached the quarter-finals in 2010, losing in a dramatic penalty shootout to Uruguay. Managed by Otto Addo, the Black Stars possess high-profile players in European leagues.",
+    "goalkeepers": [
+      "Lawrence Zigi",
+      "Joseph Anang",
+      "Benjamin Asare"
+    ],
+    "defenders": [
+      "Alidu Seidu",
+      "Jonas Adjetey",
+      "Abdul Mumin",
+      "Gideon Mensah",
+      "Baba Rahman",
+      "Jerome Opoku",
+      "Kojo Oppong",
+      "Derrick Luckassen",
+      "Marvin Senaya"
+    ],
+    "midfielders": [
+      "Caleb Yirenkyi",
+      "Thomas Partey",
+      "Kwasi Sibo",
+      "Antoine Semenyo",
+      "Elisha Owusu",
+      "Augustine Boakye"
+    ],
+    "forwards": [
+      "Fatawu Issahaku",
+      "Jordan Ayew",
+      "Brandon Thomas-Asante",
+      "Christopher Baah",
+      "Iñaki Williams",
+      "Kamaldeen Sulemana",
+      "Ernest Nuamah",
+      "Prince Adu"
+    ]
+  },
+  {
+    "team_name_html": "Morocco",
+    "db_name": "Morocco",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\morocco.webp",
+    "coach": "Walid Regragui",
+    "appearances": 6,
+    "best_result": "Fourth Place (2022)",
+    "history": "Morocco made history in Qatar 2022 by becoming the first African and Arab nation to reach a World Cup semi-final. Under Walid Regragui, they remain extremely compact and defensively resilient.",
+    "goalkeepers": [
+      "Yassine Bounou",
+      "Munir El Kajoui",
+      "Ahmed Tagnaouti"
+    ],
+    "defenders": [
+      "Achraf Hakimi",
+      "Noussair Mazraoui",
+      "Nayef Aguerd",
+      "Zakaria El Ouahdi",
+      "Issa Diop",
+      "Chadi Riad",
+      "Youssef Belammari",
+      "Redouane Halhal",
+      "Anass Salah-Eddine"
+    ],
+    "midfielders": [
+      "Sofyan Amrabat",
+      "Ayyoub Bouaddi",
+      "Chemsdine Talbi",
+      "Azzedine Ounahi",
+      "Ismaël Saibari",
+      "Samir El Mourabet",
+      "Gessime Yassine",
+      "Bilal El Khannouss",
+      "Neil El Aynaoui"
+    ],
+    "forwards": [
+      "Soufiane Rahimi",
+      "Brahim Díaz",
+      "Abde Ezzalzouli",
+      "Ayoub El Kaabi",
+      "Ayoub Amaimouni"
+    ]
+  },
+  {
+    "team_name_html": "DR Congo",
+    "db_name": "Congo DR",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\dr-congo.webp",
+    "coach": "Sébastien Desabre",
+    "appearances": 1,
+    "best_result": "Group Stage (1974)",
+    "history": "As Zaire, they qualified in 1974. In 2026, DR Congo returns to the global stage under Frenchman Sébastien Desabre, boasting physical strength and excellent wing play.",
+    "goalkeepers": [
+      "Lionel Mpasi",
+      "Timothy Fayulu",
+      "Matthieu Epolo"
+    ],
+    "defenders": [
+      "Aaron Wan-Bissaka",
+      "Steve Kapuadi",
+      "Axel Tuanzebe",
+      "Dylan Batubinsika",
+      "Joris Kayembe",
+      "Chancel Mbemba",
+      "Gédéon Kalulu",
+      "Arthur Masuaku"
+    ],
+    "midfielders": [
+      "Ngalayel Mukau",
+      "Nathanaël Mbuku",
+      "Samuel Moutoussamy",
+      "Théo Bongonda",
+      "Noah Sadiki",
+      "Aaron Tshibola",
+      "Charles Pickel",
+      "Edo Kayembe"
+    ],
+    "forwards": [
+      "Brian Cipenga",
+      "Gaël Kakuta",
+      "Meschack Elia",
+      "Cédric Bakambu",
+      "Fiston Mayele",
+      "Yoane Wissa",
+      "Simon Banza"
+    ]
+  },
+  {
+    "team_name_html": "Senegal",
+    "db_name": "Senegal",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\senegal.webp",
+    "coach": "Pape Thiaw",
+    "appearances": 3,
+    "best_result": "Quarter-finals (2002)",
+    "history": "One of Africa's heavyweights, Senegal reached the quarter-finals in their debut in 2002. Now led by Pape Thiaw, they boast excellent players in defense and attack, including veteran leaders.",
+    "goalkeepers": [
+      "Yehvann Diouf",
+      "Édouard Mendy",
+      "Mory Diaw"
+    ],
+    "defenders": [
+      "Mamadou Sarr",
+      "Kalidou Koulibaly",
+      "Abdoulaye Seck",
+      "Ismail Jakobs",
+      "Krepin Diatta",
+      "Moussa Niakhaté",
+      "Antoine Mendy",
+      "El Hadji Diouf"
+    ],
+    "midfielders": [
+      "Idrissa Gueye",
+      "Pathé Ciss",
+      "Lamine Camara",
+      "Pape Sarr",
+      "Habib Diarra",
+      "Bara Ndiaye",
+      "Pape Gueye"
+    ],
+    "forwards": [
+      "Assane Diao",
+      "Bamba Dieng",
+      "Sadio Mané",
+      "Nicolas Jackson",
+      "Chérif Ndiaye",
+      "Iliman Ndiaye",
+      "Ismaïla Sarr",
+      "Ibrahim Mbaye"
+    ]
+  },
+  {
+    "team_name_html": "Tunisia",
+    "db_name": "Tunisia",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\tunisia.webp",
+    "coach": "Kais Yaâkoubi",
+    "appearances": 6,
+    "best_result": "Group Stage (multiple times)",
+    "history": "Tunisia has qualified six times and is famous for securing Africa's first-ever World Cup match victory in 1978. They are a defensive, highly disciplined team.",
+    "goalkeepers": [
+      "Mouhib Chamakh",
+      "Aymen Dahmen",
+      "Sabri Ben Hessen"
+    ],
+    "defenders": [
+      "Ali Abdi",
+      "Montassar Talbi",
+      "Omar Rekik",
+      "Adam Arous",
+      "Dylan Bronn",
+      "Mortadha Ben Ouanes",
+      "Yan Valery",
+      "Mohamed Ben Hmida",
+      "Moutaz Neffati",
+      "Raed Chikhaoui"
+    ],
+    "midfielders": [
+      "Hannibal Mejbri",
+      "Ismaël Gharbi",
+      "Rani Khedira",
+      "Khalil Ayari",
+      "Mohamed Hadj Mahmoud",
+      "Ellyes Skhiri",
+      "Anis Slimane",
+      "Sebastian Tounekti"
+    ],
+    "forwards": [
+      "Elias Achouri",
+      "Elias Saad",
+      "Hazem Mastouri",
+      "Rayan Elloumi",
+      "Firas Chaouat"
+    ]
+  },
+  {
+    "team_name_html": "Saudi Arabia",
+    "db_name": "Saudi Arabia",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\saudi-arabia.webp",
+    "coach": "Hervé Renard",
+    "appearances": 6,
+    "best_result": "Round of 16 (1994)",
+    "history": "Saudi Arabia caused one of the biggest upsets in World Cup history by defeating Argentina in 2022. Renowned manager Hervé Renard has returned to lead the Green Falcons in 2026.",
+    "goalkeepers": [
+      "Nawaf Al-Aqidi",
+      "Mohammed Al-Owais",
+      "Ahmed Al-Kassar"
+    ],
+    "defenders": [
+      "Ali Majrashi",
+      "Ali Lajami",
+      "Abdulelah Al-Amri",
+      "Hassan Al-Tambakti",
+      "Saud Abdulhamid",
+      "Nawaf Bu Washl",
+      "Hassan Kadish",
+      "Moteb Al-Harbi",
+      "Jehad Thikri",
+      "Mohammed Abu Alshamat"
+    ],
+    "midfielders": [
+      "Nasser Al-Dawsari",
+      "Musab Al-Juwayr",
+      "Abdullah Al-Khaibari",
+      "Ziyad Al-Johani",
+      "Ala Al-Hajji",
+      "Mohamed Kanno"
+    ],
+    "forwards": [
+      "Aiman Yahya",
+      "Feras Al-Brikan",
+      "Salem Al-Dawsari",
+      "Saleh Al-Shehri",
+      "Khalid Al-Ghannam",
+      "Abdullah Al-Hamddan",
+      "Sultan Mandash"
+    ]
+  },
+  {
+    "team_name_html": "Australia",
+    "db_name": "Australia",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\australia.webp",
+    "coach": "Tony Popovic",
+    "appearances": 6,
+    "best_result": "Round of 16 (2006, 2022)",
+    "history": "The Socceroos reached the Round of 16 in 2022, pushing champions Argentina to the limit. Under Tony Popovic, they play a robust, organized, and physically demanding style.",
+    "goalkeepers": [
+      "Mathew Ryan",
+      "Paul Izzo",
+      "Patrick Beach"
+    ],
+    "defenders": [
+      "Miloš Degenek",
+      "Alessandro Circati",
+      "Jacob Italiano",
+      "Jordan Bos",
+      "Jason Geria",
+      "Kai Trewin",
+      "Aziz Behich",
+      "Harry Souttar",
+      "Cameron Burgess",
+      "Lucas Herrington"
+    ],
+    "midfielders": [
+      "Connor Metcalfe",
+      "Aiden O'Neill",
+      "Cameron Devlin",
+      "Jackson Irvine",
+      "Paul Okon-Engstler"
+    ],
+    "forwards": [
+      "Mathew Leckie",
+      "Mohamed Touré",
+      "Ajdin Hrustić",
+      "Awer Mabil",
+      "Nestory Irankunda",
+      "Cristian Volpato",
+      "Nishan Velupillay",
+      "Tete Yengi"
+    ]
+  },
+  {
+    "team_name_html": "Iraq",
+    "db_name": "Iraq",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\iraq.webp",
+    "coach": "Jesús Casas",
+    "appearances": 1,
+    "best_result": "Group Stage (1986)",
+    "history": "Iraq qualified for their second-ever World Cup in 2026. Managed by Spaniard Jesús Casas, the Lions of Mesopotamia possess strong attacking talent and passionate support.",
+    "goalkeepers": [
+      "Fahad Talib",
+      "Jalal Hassan",
+      "Ahmed Basil"
+    ],
+    "defenders": [
+      "Rebin Ghareeb",
+      "Hussein Ali",
+      "Zaid Tahseen",
+      "Akam Hashim",
+      "Munaf Younus",
+      "Ahmed Yahya",
+      "Merchas Doski",
+      "Mustafa Saadoon",
+      "Frans Putros"
+    ],
+    "midfielders": [
+      "Youssef Amyn",
+      "Ibrahim Bayesh",
+      "Zidane Iqbal",
+      "Amir Al-Ammari",
+      "Kevin Yakob",
+      "Aimar Sher",
+      "Zaid Ismael"
+    ],
+    "forwards": [
+      "Ali Al-Hamadi",
+      "Mohanad Ali",
+      "Ahmed Qasim",
+      "Ali Yousif",
+      "Ali Jasim",
+      "Aymen Hussein",
+      "Marko Farji"
+    ]
+  },
+  {
+    "team_name_html": "Japan",
+    "db_name": "Japan",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\japan.webp",
+    "coach": "Hajime Moriyasu",
+    "appearances": 7,
+    "best_result": "Round of 16 (2002, 2010, 2018, 2022)",
+    "history": "Japan beat Germany and Spain in 2022 to top their group. Under Hajime Moriyasu, they play a highly technical, fast transition game, aiming to reach their first-ever quarter-final.",
+    "goalkeepers": [
+      "Zion Suzuki",
+      "Keisuke Osako",
+      "Tomoki Hayakawa"
+    ],
+    "defenders": [
+      "Yukinari Sugawara",
+      "Shogo Taniguchi",
+      "Kou Itakura",
+      "Yuto Nagatomo",
+      "Tsuyoshi Watanabe",
+      "Ayumu Seko",
+      "Hiroki Ito",
+      "Takehiro Tomiyasu",
+      "Junnosuke Suzuki"
+    ],
+    "midfielders": [
+      "Wataru Endo",
+      "Ao Tanaka",
+      "Takefusa Kubo",
+      "Ritsu Doan",
+      "Daizen Maeda",
+      "Keito Nakamura",
+      "Junya Ito",
+      "Daichi Kamada",
+      "Yuito Suzuki",
+      "Kaishu Sano"
+    ],
+    "forwards": [
+      "Keisuke Goto",
+      "Ayase Ueda",
+      "Koki Ogawa",
+      "Kento Shiogai"
+    ]
+  },
+  {
+    "team_name_html": "Jordan",
+    "db_name": "Jordan",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\jordan.webp",
+    "coach": "Jamal Sellami",
+    "appearances": 0,
+    "best_result": "Debut (2026)",
+    "history": "Jordan achieved a historic first qualification for the World Cup in 2026, building on their sensational run to the Asian Cup final. They play with intense passion and counter-attacking speed.",
+    "goalkeepers": [
+      "Yazeed Abu Laila",
+      "Nour Baniateyah",
+      "Abdallah Al-Fakhori"
+    ],
+    "defenders": [
+      "Mohammad Abu Hasheesh",
+      "Abdallah Nasib",
+      "Husam Abu Dahab",
+      "Yazan Al-Arab",
+      "Mohammad Abu Al-Nadi",
+      "Saleem Obaid",
+      "Saed Al-Rosan",
+      "Ehsan Haddad",
+      "Anas Badawi"
+    ],
+    "midfielders": [
+      "Amer Jamous",
+      "Noor Al-Rawabdeh",
+      "Rajaei Ayed",
+      "Ibrahim Sadeh",
+      "Mohannad Abu Taha",
+      "Nizar Al-Rashdan",
+      "Mohammad Al-Daoud"
+    ],
+    "forwards": [
+      "Mohammad Abu Zraiq",
+      "Ali Olwan",
+      "Mousa Al-Tamari",
+      "Odeh Fakhoury",
+      "Mahmoud Al-Mardi",
+      "Ibrahim Sabra",
+      "Ali Azaizeh"
+    ]
+  },
+  {
+    "team_name_html": "Uzbekistan",
+    "db_name": "Uzbekistan",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\uzbekistan.webp",
+    "coach": "Srečko Katanec",
+    "appearances": 0,
+    "best_result": "Debut (2026)",
+    "history": "The White Wolves finally broke their qualification barrier to make their debut in 2026. Managed by Slovenian Srečko Katanec, they possess a highly organized midfield and clinical finishers.",
+    "goalkeepers": [
+      "Utkir Yusupov",
+      "Abduvohid Nematov",
+      "Botirali Ergashev"
+    ],
+    "defenders": [
+      "Abdukodir Khusanov",
+      "Khojiakbar Alijonov",
+      "Farrukh Sayfiev",
+      "Rustam Ashurmatov",
+      "Sherzod Nasrullaev",
+      "Umar Eshmurodov",
+      "Abdulla Abdullaev",
+      "Behruzjon Karimov",
+      "Avazbek Ulmasaliyev",
+      "Jakhongir Urozov"
+    ],
+    "midfielders": [
+      "Akmal Mozgovoy",
+      "Otabek Shukurov",
+      "Jamshid Iskanderov",
+      "Odiljon Xamrobekov",
+      "Jaloliddin Masharipov",
+      "Oston Urunov",
+      "Dostonbek Khamdamov",
+      "Azizjon Ganiev",
+      "Abbosbek Fayzullaev",
+      "Sherzod Esanov"
+    ],
+    "forwards": [
+      "Eldor Shomurodov",
+      "Azizbek Amonov",
+      "Igor Sergeev"
+    ]
+  },
+  {
+    "team_name_html": "Qatar",
+    "db_name": "Qatar",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\qatar.webp",
+    "coach": "Tintín Márquez",
+    "appearances": 1,
+    "best_result": "Group Stage (2022)",
+    "history": "As hosts in 2022, Qatar struggled but bounced back to win the 2023 Asian Cup. Managed by Tintín Márquez, they rely on strong chemistry and the striking partnership of Akram Afif and Almoez Ali.",
+    "goalkeepers": [
+      "Mahmoud Abu Nada",
+      "Salah Zakaria",
+      "Meshaal Barsham"
+    ],
+    "defenders": [
+      "Pedro Miguel",
+      "Lucas Mendes",
+      "Issa Laye",
+      "Jassem Gaber",
+      "Ayoub Aloui",
+      "Homam Ahmed",
+      "Boualem Khoukhi",
+      "Sultan Al-Brake",
+      "Al-Hashmi Al-Hussein"
+    ],
+    "midfielders": [
+      "Abdulaziz Hatem",
+      "Karim Boudiaf",
+      "Ahmed Al-Ganehi",
+      "Ahmed Fathy",
+      "Assim Madibo"
+    ],
+    "forwards": [
+      "Ahmed Alaaeldin",
+      "Edmilson Júnior",
+      "Mohammed Muntari",
+      "Hassan Al-Haydos",
+      "Akram Afif",
+      "Yusuf Abdurisag",
+      "Almoez Ali",
+      "Tahsin Jamshid",
+      "Mohamed Manai"
+    ]
+  },
+  {
+    "team_name_html": "South Korea",
+    "db_name": "Korea Republic",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\south-korea.webp",
+    "coach": "Hong Myung-bo",
+    "appearances": 11,
+    "best_result": "Fourth Place (2002)",
+    "history": "Asia's most successful World Cup nation, having reached the semi-finals on home soil in 2002. Led by legendary former captain Hong Myung-bo, they feature world-class captain Son Heung-min.",
+    "goalkeepers": [
+      "Seunggyu Kim",
+      "Bumkeun Song",
+      "Hyeonwoo Jo"
+    ],
+    "defenders": [
+      "Hanbeom Lee",
+      "Minjae Kim",
+      "Taehyeon Kim",
+      "Taeseok Lee",
+      "Wije Cho",
+      "Moonhwan Kim",
+      "Jinseob Park",
+      "Youngwoo Seol",
+      "Jens Castrop"
+    ],
+    "midfielders": [
+      "Gihyuk Lee",
+      "Inbeom Hwang",
+      "Seungho Paik",
+      "Jaesung Lee",
+      "Heechan Hwang",
+      "Junho Bae",
+      "Kangin Lee",
+      "Hyunjun Yang",
+      "Jingyu Kim",
+      "Jisung Eom",
+      "Donggyeong Lee"
+    ],
+    "forwards": [
+      "Heungmin Son",
+      "Guesung Cho",
+      "Hyeongyu Oh"
+    ]
+  },
+  {
+    "team_name_html": "Iran",
+    "db_name": "IR Iran",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\iran.webp",
+    "coach": "Amir Ghalenoei",
+    "appearances": 6,
+    "best_result": "Group Stage (multiple times)",
+    "history": "Iran is a dominant Asian side but has never progressed past the group stage in six attempts. Under Ghalenoei, they have a powerful attacking threat led by Mehdi Taremi.",
+    "goalkeepers": [
+      "Alireza Beiranvand",
+      "Payam Niazmand",
+      "Hossein Hosseini"
+    ],
+    "defenders": [
+      "Saleh Hardani",
+      "Ehsan Hajisafi",
+      "Shoja Khalilzadeh",
+      "Milad Mohammadi",
+      "Hossein Kanani",
+      "Arya Yousefi",
+      "Ali Nemati",
+      "Ramin Rezaeian",
+      "Danial Iri"
+    ],
+    "midfielders": [
+      "Saeid Ezatolahi",
+      "Alireza Jahanbakhsh",
+      "Mohammad Mohebbi",
+      "Saman Ghoddos",
+      "Roozbeh Cheshmi",
+      "Mehdi Torabi",
+      "Mohammad Ghorbani",
+      "Amirmohammad Razaghinia"
+    ],
+    "forwards": [
+      "Mehdi Taremi",
+      "Mehdi Ghayedi",
+      "Ali Alipour",
+      "Amirhossein Hosseinzadeh",
+      "Shahriyar Moghanloo",
+      "Dennis Dargahi"
+    ]
+  },
+  {
+    "team_name_html": "New Zealand",
+    "db_name": "New Zealand",
+    "flag_image_path": "C:\\Users\\regon\\Desktop\\FIFA World Cup 2026 Lineups_ All Teams, Coaches and Players - API-FOOTBALL_files\\new-zealand.webp",
+    "coach": "Darren Bazeley",
+    "appearances": 2,
+    "best_result": "Group Stage (1982, 2010)",
+    "history": "The All Whites famously went undefeated in South Africa 2010 despite exit in the group stage. Led by striker Chris Wood, they qualified as Oceania's top team in 2026.",
+    "goalkeepers": [
+      "Max Crocombe",
+      "Alex Paulsen",
+      "Michael Woud"
+    ],
+    "defenders": [
+      "Tim Payne",
+      "Francis de Vries",
+      "Tyler Bindon",
+      "Michael Boxall",
+      "Liberato Cacace",
+      "Nando Pijnaker",
+      "Finn Surman",
+      "Callan Elliot",
+      "Tommy Smith"
+    ],
+    "midfielders": [
+      "Joe Bell",
+      "Matthew Garbett",
+      "Marko Stamenić",
+      "Sarpreet Singh",
+      "Elijah Just",
+      "Alex Rufer",
+      "Ben Old",
+      "Callum McCowatt",
+      "Ryan Thomas",
+      "Lachlan Bayliss"
+    ],
+    "forwards": [
+      "Chris Wood",
+      "Kosta Barbarouses",
+      "Ben Waine",
+      "Jesse Randall"
+    ]
+  }
+]
