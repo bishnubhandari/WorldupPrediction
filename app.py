@@ -1807,7 +1807,7 @@ if _live_matches_now:
             f"<span style='font-size:1.3rem;'>🔴</span>"
             f"<span style='color:white; font-weight:700; font-size:1.05rem; letter-spacing:0.05em;'>LIVE</span>"
             f"<span style='color:#fef2f2; font-size:1.05rem;'>{_lm['team_a']} <b style=\"color:white\">{_score_disp}</b> {_lm['team_b']}</span>"
-            f"<span style='margin-left:auto; color:rgba(255,255,255,0.7); font-size:0.8rem;'>Auto-refreshing every 60s</span>"
+            f"<span style='margin-left:auto; color:rgba(255,255,255,0.7); font-size:0.8rem;'></span>"
             f"</div>",
             unsafe_allow_html=True
         )
@@ -2240,7 +2240,7 @@ with tab_matches:
 # --- Tab 3: Group Tables & Goalscorers ---
 with tab_groups:
     st.subheader("🌍 FIFA World Cup 2026 — Group Tables")
-    st.write("Group standings and goalscorers — synced from Wikipedia at halftime, full time, and extra time.")
+    st.write("Group standings and goalscorers")
     
     # Show last sync time and next scheduled sync
     with _SYNC_LOCK:
