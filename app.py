@@ -777,13 +777,7 @@ if st.session_state.user_id is None:
         else:
             st.sidebar.error("Invalid Username or Password.")
             
-    st.sidebar.info("""
-    **💡 Predefined Accounts:**
-    *   `admin` / `Wc2026!Adm#98`
-    *   `knshrestha` / `KnS#7202`
-    *   `ksvgautam` / `KsvG!4091`
-    *   `ashishkhadka` / `Ashish#8301`
-    """)
+    st.sidebar.info("💡 Please contact Admin for your username and password.")
 else:
     st.sidebar.html(f"""
     <div style='background:rgba(251,191,36,0.1); border:1px solid #fbbf24; border-radius:8px; padding:15px; text-align:center; margin-bottom:15px;'>
