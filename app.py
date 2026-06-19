@@ -557,13 +557,20 @@ st.html("""
         color: #f8fafc;
     }
     
+    /* Remove default Streamlit top padding to reduce top gaps */
+    .block-container {
+        padding-top: 1.0rem !important;
+        padding-bottom: 1.0rem !important;
+    }
+    
     .worldcup-title {
         text-align: center;
         background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 2.8rem;
+        font-size: 2.2rem;
         font-weight: 800;
+        margin-top: 0px !important;
         margin-bottom: 2px;
         letter-spacing: 1px;
     }
@@ -571,18 +578,18 @@ st.html("""
     .worldcup-subtitle {
         text-align: center;
         color: #fbbf24;
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         font-weight: 500;
-        margin-bottom: 25px;
+        margin-bottom: 6px;
         text-transform: uppercase;
         letter-spacing: 3px;
     }
     
     .server-time {
         text-align: center;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         color: #94a3b8;
-        margin-bottom: 25px;
+        margin-bottom: 10px;
     }
     
     /* Responsive Match Card */
@@ -708,11 +715,14 @@ st.html("""
 """)
 
 # --- Header ---
-st.html("<h1 class='worldcup-title'>🏆 FIFA WORLD CUP 2026</h1>")
-st.html("<div class='worldcup-subtitle'>Score Predictor</div>")
-
 now = get_nepal_time()
-st.html(f"<div class='server-time'>🕒 Current Time: <b>{now.strftime('%Y-%m-%d %H:%M:%S')} (Kathmandu Time)</b></div>")
+st.html(f"""
+<div style='text-align: center; margin-top: -15px;'>
+    <h1 class='worldcup-title'>🏆 FIFA WORLD CUP 2026</h1>
+    <div class='worldcup-subtitle'>Score Predictor</div>
+    <div class='server-time'>🕒 Current Time: <b>{now.strftime('%Y-%m-%d %H:%M:%S')} (Kathmandu Time)</b></div>
+</div>
+""")
 
 # --- User Session Setup ---
 if "user_id" not in st.session_state:
