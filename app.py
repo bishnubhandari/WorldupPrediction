@@ -890,24 +890,6 @@ tab_leaderboard, tab_matches, *tab_admin = st.tabs(tabs)
 
 # --- Tab 1: Leaderboard ---
 with tab_leaderboard:
-    st.subheader("Leaderboard Standings")
-    st.write("Calculated points rules: Each prediction costs **100 pts**. Whichever user gets the exact score right splits the total match points pool equally. If no one is right, the pool carries forward and doubles!")
-    
-    leaderboard_data = get_leaderboard()
-    
-    if leaderboard_data:
-        # Build styled HTML table
-        rows_html = ""
-        for rank, row in enumerate(leaderboard_data, 1):
-            highlight = "style='color:#fbbf24; font-weight:700;'" if rank == 1 else ""
-            net_color = "#10b981" if row['points'] >= 0 else "#ef4444"
-            rows_html += f"<tr><td>{rank}</td><td {highlight}>{row['display_name']} (@{row['username']})</td><td>{row['pred_count']}</td><td>🥇 {row['exact_wins']}</td><td style='color:#10b981; font-weight:600;'>{row['points_won']:.1f}</td><td style='color:#ef4444;'>{row['points_cost']}</td><td style='font-weight:700; color:{net_color};'>{row['points']:.1f}</td></tr>"
-            
-        st.html(f"<div style='overflow-x: auto;'><table class='table-leaderboard'><thead><tr><th>Rank</th><th>Predictor</th><th>Predictions Made</th><th>Winning Predictions (Exact)</th><th>Total Points Won</th><th>Points Cost</th><th>Net Balance</th></tr></thead><tbody>{rows_html}</tbody></table></div>")
-    else:
-        st.info("No data available.")
-        
-    st.html("<hr style='border-color:rgba(255,255,255,0.05);'>")
     st.subheader("Recent Predictions & Live Tracker")
     st.write("Click on any recent match to view predictions submitted by all users, including live eligibility and points won.")
     
@@ -934,9 +916,41 @@ with tab_leaderboard:
                 
                 group_lbl = f"Group {m['group_name']}" if m['group_name'] else m['stage'].replace("-", " ").title()
                 city_lbl = m['city'].replace("-", " ").title()
+                
+                pool_details = get_match_pool_and_payout(mid)
+                
+                winners_summary_html = ""
                 if m["finished"] == 1:
                     score_str = f"<b style='color:#fbbf24; font-size:1.2rem;'>{m['score_a']} - {m['score_b']}</b>"
                     status_badge = "<span class='badge-status badge-finished' style='display:block; margin:4px auto; text-align:center;'>Finished</span>"
+                    
+                    if pool_details['winners_count'] > 0:
+                        conn = sqlite3.connect(DB_PATH)
+                        conn.row_factory = sqlite3.Row
+                        w_list = conn.execute(
+                            "SELECT display_name FROM users WHERE id IN (" + ",".join(str(w) for w in pool_details['winners']) + ")"
+                        ).fetchall()
+                        conn.close()
+                        winner_names = ", ".join([r['display_name'] for r in w_list])
+                        winners_summary_html = f"""
+                        <div style='border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 8px; padding-top: 6px; text-align: left;'>
+                            <div style='font-size: 0.72rem; color: #10b981; font-weight: 600; display: flex; justify-content: space-between;'>
+                                <span>🏆 {pool_details['winners_count']} Winner(s)</span>
+                                <span>+{pool_details['payout']:.1f} pts</span>
+                            </div>
+                            <div style='font-size: 0.68rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;' title='{winner_names}'>👑 {winner_names}</div>
+                        </div>
+                        """
+                    else:
+                        winners_summary_html = f"""
+                        <div style='border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 8px; padding-top: 6px; text-align: left;'>
+                            <div style='font-size: 0.72rem; color: #f59e0b; font-weight: 600; display: flex; justify-content: space-between;'>
+                                <span>🏆 0 Winners</span>
+                                <span>Carryover</span>
+                            </div>
+                            <div style='font-size: 0.68rem; color: #ef4444; font-weight: 600; margin-top: 2px;'>💰 {pool_details['outgoing_carry']:.0f} pts</div>
+                        </div>
+                        """
                 elif m["score_a"] is not None and m["score_b"] is not None:
                     score_str = f"<b style='color:#ef4444; font-size:1.2rem;'>{m['score_a']} - {m['score_b']}</b>"
                     status_badge = "<span class='badge-status badge-locked' style='background:rgba(239,68,68,0.15); color:#ef4444; border-color:#ef4444; display:block; margin:4px auto; text-align:center;'>🔴 LIVE</span>"
@@ -952,6 +966,7 @@ with tab_leaderboard:
                     <div style='font-size: 0.9rem; font-weight: 600; color: #f8fafc; margin-top: 5px;'>{emoji_b} {m['team_b']}</div>
                     <div style='margin-top:8px;'>{status_badge}</div>
                     <div style='font-size:0.75rem; color:#94a3b8; margin-top:6px;'>🏟 {city_lbl}</div>
+                    {winners_summary_html}
                 </div>
                 """)
                 
@@ -959,6 +974,25 @@ with tab_leaderboard:
                     show_prediction_summary_dialog(mid, m['team_a'], m['team_b'], m['score_a'], m['score_b'], m['finished'])
     else:
         st.info("No completed or locked matches yet to display predictions.")
+        
+    st.html("<hr style='border-color:rgba(255,255,255,0.05);'>")
+    
+    st.subheader("Leaderboard Standings")
+    st.write("Calculated points rules: Each prediction costs **100 pts**. Whichever user gets the exact score right splits the total match points pool equally. If no one is right, the pool carries forward and doubles!")
+    
+    leaderboard_data = get_leaderboard()
+    
+    if leaderboard_data:
+        # Build styled HTML table
+        rows_html = ""
+        for rank, row in enumerate(leaderboard_data, 1):
+            highlight = "style='color:#fbbf24; font-weight:700;'" if rank == 1 else ""
+            net_color = "#10b981" if row['points'] >= 0 else "#ef4444"
+            rows_html += f"<tr><td>{rank}</td><td {highlight}>{row['display_name']} (@{row['username']})</td><td>{row['pred_count']}</td><td>🥇 {row['exact_wins']}</td><td style='color:#10b981; font-weight:600;'>{row['points_won']:.1f}</td><td style='color:#ef4444;'>{row['points_cost']}</td><td style='font-weight:700; color:{net_color};'>{row['points']:.1f}</td></tr>"
+            
+        st.html(f"<div style='overflow-x: auto;'><table class='table-leaderboard'><thead><tr><th>Rank</th><th>Predictor</th><th>Predictions Made</th><th>Winning Predictions (Exact)</th><th>Total Points Won</th><th>Points Cost</th><th>Net Balance</th></tr></thead><tbody>{rows_html}</tbody></table></div>")
+    else:
+        st.info("No data available.")
 
 # --- Tab 2: Matches & Predictions ---
 with tab_matches:
