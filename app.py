@@ -18,7 +18,7 @@ if os.path.exists(logo_path):
         pass
 
 st.set_page_config(
-    page_title="FIFA World Cup 2026 cScore Predicotor",
+    page_title="FIFA World Cup 2026 — Score Prediction",
     page_icon=logo_img,
     layout="wide",
     initial_sidebar_state="expanded"
@@ -739,7 +739,10 @@ now = get_nepal_time()
 st.html(f"""
 <div style='text-align: center; margin-top: -15px;'>
     <h1 class='worldcup-title'>{logo_html}FIFA WORLD CUP 2026</h1>
-    <div class='worldcup-subtitle'>cScore Predicotor</div>
+    <div class='worldcup-subtitle'>Score Prediction</div>
+    <div style='font-size: 0.95rem; color: #fbbf24; margin-top: 4px; margin-bottom: 8px; font-weight: 500; font-style: italic;'>
+        फुटबलको महाकुम्भको रोमाञ्चक यात्रा र उत्साहको आनन्द लिनुहोस्! ⚽🏆
+    </div>
     <div class='server-time'>🕒 Current Time: <b>{now.strftime('%Y-%m-%d %H:%M:%S')} (Kathmandu Time)</b></div>
 </div>
 """)
