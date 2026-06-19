@@ -1204,9 +1204,6 @@ with tab_matches:
                 </div>
                 """))
                 
-                if st.button("📊 View Predictions Summary", key=f"finish_sum_{mid}", use_container_width=True):
-                    show_prediction_summary_dialog(mid, m['team_a'], m['team_b'], score_a, score_b, m['finished'])
-                
                 # Admin PDF download
                 if st.session_state.username == "admin":
                     # Get predictions for this match
