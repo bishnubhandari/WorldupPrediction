@@ -719,7 +719,7 @@ now = get_nepal_time()
 st.html(f"""
 <div style='text-align: center; margin-top: -15px;'>
     <h1 class='worldcup-title'>🏆 FIFA WORLD CUP 2026</h1>
-    <div class='worldcup-subtitle'>Score Predictor</div>
+    <div class='worldcup-subtitle'>Socre predictor</div>
     <div class='server-time'>🕒 Current Time: <b>{now.strftime('%Y-%m-%d %H:%M:%S')} (Kathmandu Time)</b></div>
 </div>
 """)
@@ -866,7 +866,18 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
                     pts_lbl = f"<b style='color:#10b981;'>+{pool_details['payout']:.1f}</b>"
                     bg_color = "background-color:rgba(251,191,36,0.15);"
                 else:
-                    status_lbl = "<span style='color:#94a3b8;'>Incorrect</span>"
+                    # Check if outcome (winner/draw/loss) matches
+                    try:
+                        pred_diff = int(pa) - int(pb)
+                        act_diff = int(score_a) - int(score_b)
+                        outcome_match = (pred_diff > 0 and act_diff > 0) or (pred_diff < 0 and act_diff < 0) or (pred_diff == 0 and act_diff == 0)
+                    except Exception:
+                        outcome_match = False
+                    
+                    if outcome_match:
+                        status_lbl = "<span style='color:#38bdf8; font-weight:600;'>Correct Outcome</span>"
+                    else:
+                        status_lbl = "<span style='color:#94a3b8;'>Incorrect</span>"
                     pts_lbl = "0"
                     bg_color = ""
             else:
