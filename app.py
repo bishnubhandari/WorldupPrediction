@@ -88,15 +88,32 @@ def init_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS matches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_number INTEGER UNIQUE,
             team_a TEXT,
             team_b TEXT,
             group_name TEXT,
+            stage TEXT,
+            stadium TEXT,
+            city TEXT,
             kickoff_time DATETIME,
             score_a INTEGER DEFAULT NULL,
             score_b INTEGER DEFAULT NULL,
             finished INTEGER DEFAULT 0
         )
     """)
+    
+    cursor.execute("PRAGMA table_info(matches)")
+    m_columns = [c[1] for c in cursor.fetchall()]
+    if m_columns:
+        if "match_number" not in m_columns:
+            cursor.execute("ALTER TABLE matches ADD COLUMN match_number INTEGER DEFAULT NULL")
+        if "stage" not in m_columns:
+            cursor.execute("ALTER TABLE matches ADD COLUMN stage TEXT DEFAULT NULL")
+        if "stadium" not in m_columns:
+            cursor.execute("ALTER TABLE matches ADD COLUMN stadium TEXT DEFAULT NULL")
+        if "city" not in m_columns:
+            cursor.execute("ALTER TABLE matches ADD COLUMN city TEXT DEFAULT NULL")
+        conn.commit()
     
     # 3. Predictions Table
     cursor.execute("""
@@ -155,31 +172,69 @@ def init_db():
     # Populate matches from JSON if matches table is empty
     cursor.execute("SELECT COUNT(*) FROM matches")
     if cursor.fetchone()[0] == 0:
-        json_file = "worldcup_group_stage.json"
-        if os.path.exists(json_file):
+        api_json = "fixtures.json"
+        local_json = "worldcup_group_stage.json"
+        if os.path.exists(api_json):
             import json
-            with open(json_file, "r", encoding="utf-8") as f:
-                group_matches = json.load(f)
             
-            for m in group_matches:
-                team_a = m['team1']
-                team_b = m['team2']
-                group_name = m['group']
-                nep_dt = parse_to_nepal_time(m['date'], m['time'])
+            def clean_name(name):
+                n = name.strip()
+                if "Cura" in n: return "Curacao"
+                if "Bosnia" in n: return "Bosnia and Herzegovina"
+                if "Congo" in n or "DR" in n: return "Congo DR"
+                if "Ivory" in n or "Ivoire" in n: return "Cote d'Ivoire"
+                if "Czech" in n: return "Czechia"
+                if "Iran" in n: return "IR Iran"
+                if "Korea" in n: return "Korea Republic"
+                if "Turkey" in n or "Turk" in n or "t\u00fcrk" in n.lower(): return "Turkiye"
+                if "USA" in n or "United States" in n: return "United States"
+                if "Cape Verde" in n or "Cabo Verde" in n: return "Cabo Verde"
+                return n
+
+            local_map = {}
+            if os.path.exists(local_json):
+                with open(local_json, "r", encoding="utf-8") as lf:
+                    local_data = json.load(lf)
+                    for lm in local_data:
+                        t1 = clean_name(lm['team1'])
+                        t2 = clean_name(lm['team2'])
+                        score_data = lm.get('score')
+                        score_a = None
+                        score_b = None
+                        finished = 0
+                        if score_data and 'ft' in score_data:
+                            score_a = score_data['ft'][0]
+                            score_b = score_data['ft'][1]
+                            finished = 1
+                        local_map[(t1, t2)] = (score_a, score_b, finished)
+                        local_map[(t2, t1)] = (score_a, score_b, finished)
+
+            with open(api_json, "r", encoding="utf-8") as f:
+                api_data = json.load(f)
+                api_fixtures = api_data.get("fixtures", [])
+            
+            for f_item in api_fixtures:
+                match_num = f_item["matchNumber"]
+                team_a = f_item["homeTeam"]
+                team_b = f_item["awayTeam"]
+                group_name = f_item.get("group", "")
+                stage = f_item["stage"]
+                stadium = f_item["stadium"]
+                city = f_item["hostCity"]
+                
+                # kickoffUtc to Nepal time
+                utc_dt = datetime.strptime(f_item["kickoffUtc"], "%Y-%m-%dT%H:%M:%SZ")
+                nep_dt = utc_dt + timedelta(hours=5, minutes=45)
                 kickoff_time_str = nep_dt.strftime('%Y-%m-%d %H:%M:%S')
                 
-                score_data = m.get('score')
-                score_a = None
-                score_b = None
-                finished = 0
-                if score_data and 'ft' in score_data:
-                    score_a = score_data['ft'][0]
-                    score_b = score_data['ft'][1]
-                    finished = 1
-                    
+                score_a, score_b, finished = local_map.get((clean_name(team_a), clean_name(team_b)), (None, None, 0))
+                
                 cursor.execute(
-                    "INSERT INTO matches (team_a, team_b, group_name, kickoff_time, score_a, score_b, finished) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (team_a, team_b, group_name, kickoff_time_str, score_a, score_b, finished)
+                    """
+                    INSERT INTO matches (match_number, team_a, team_b, group_name, stage, stadium, city, kickoff_time, score_a, score_b, finished)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (match_num, team_a, team_b, group_name, stage, stadium, city, kickoff_time_str, score_a, score_b, finished)
                 )
             conn.commit()
     conn.close()
@@ -407,12 +462,18 @@ def generate_match_pdf(match, predictions):
     group = match['group_name']
     kickoff = match['kickoff_time']
     mid = match['id']
+    match_num = match.get('match_number', mid)
+    stage = match.get('stage', 'group-stage')
+    stadium = match.get('stadium', 'N/A')
+    city = match.get('city', 'N/A')
     
     pool_details = get_match_pool_and_payout(mid)
     
     pdf.cell(190, 8, text=f"{team_a} vs {team_b}", ln=True)
     pdf.set_font("helvetica", style="", size=11)
-    pdf.cell(190, 6, text=f"Stage/Group: {group} | Kickoff: {kickoff} NPT", ln=True)
+    stage_lbl = f"Group {group}" if group else stage.replace("-", " ").title()
+    pdf.cell(190, 6, text=f"Match #{match_num} | Stage: {stage_lbl} | Venue: {stadium} ({city.replace('-', ' ').title()})", ln=True)
+    pdf.cell(190, 6, text=f"Kickoff: {kickoff} NPT", ln=True)
     
     if score_a is not None and score_b is not None:
         winner = team_a if score_a > score_b else team_b if score_a < score_b else "Draw"
@@ -859,6 +920,8 @@ with tab_leaderboard:
                 emoji_a = get_team_emoji(m["team_a"])
                 emoji_b = get_team_emoji(m["team_b"])
                 
+                group_lbl = f"Group {m['group_name']}" if m['group_name'] else m['stage'].replace("-", " ").title()
+                city_lbl = m['city'].replace("-", " ").title()
                 if m["finished"] == 1:
                     score_str = f"<b style='color:#fbbf24; font-size:1.2rem;'>{m['score_a']} - {m['score_b']}</b>"
                     status_badge = "<span class='badge-status badge-finished' style='display:block; margin:4px auto; text-align:center;'>Finished</span>"
@@ -871,10 +934,12 @@ with tab_leaderboard:
                 
                 st.html(f"""
                 <div style='background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(251, 191, 36, 0.15); border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 8px;'>
+                    <div style='font-size:0.75rem; color:#fbbf24; font-weight:700; margin-bottom:4px;'>Match #{m['match_number']}</div>
                     <div style='font-size: 0.9rem; font-weight: 600; color: #f8fafc; margin-bottom: 5px;'>{emoji_a} {m['team_a']}</div>
                     <div style='margin: 5px 0;'>{score_str}</div>
                     <div style='font-size: 0.9rem; font-weight: 600; color: #f8fafc; margin-top: 5px;'>{emoji_b} {m['team_b']}</div>
                     <div style='margin-top:8px;'>{status_badge}</div>
+                    <div style='font-size:0.75rem; color:#94a3b8; margin-top:6px;'>🏟 {city_lbl}</div>
                 </div>
                 """)
                 
@@ -931,10 +996,12 @@ with tab_matches:
                     
                 pool_details = get_match_pool_and_payout(mid)
                 
+                group_lbl = f"Group {m['group_name']}" if m['group_name'] else m['stage'].replace("-", " ").title()
+                city_lbl = m['city'].replace("-", " ").title()
                 st.html(textwrap.dedent(f"""
                 <div class='match-card'>
                     <div class='card-meta'>
-                        <span>⚽ {m['group_name']}</span>
+                        <span>⚽ Match #{m['match_number']} | {group_lbl}</span>
                         <span class='badge-status badge-open'>Open ({hours_left}h {mins_left}m left)</span>
                     </div>
                     <div class='teams-grid'>
@@ -946,7 +1013,8 @@ with tab_matches:
                         💰 Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
                     </div>
                     <div class='card-footer' style='text-align:center;'>
-                        <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
+                        <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
+                        <p style='margin:2px 0 0 0; font-size:0.8rem; color:#94a3b8;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
                     </div>
                 </div>
                 """))
@@ -996,12 +1064,14 @@ with tab_matches:
                 
                 pool_details = get_match_pool_and_payout(mid)
                 
+                group_lbl = f"Group {m['group_name']}" if m['group_name'] else m['stage'].replace("-", " ").title()
+                city_lbl = m['city'].replace("-", " ").title()
                 # Render Card
                 if is_live:
                     st.html(textwrap.dedent(f"""
                     <div class='match-card' style='border-color:#ef4444;'>
                         <div class='card-meta'>
-                            <span>⚽ {m['group_name']}</span>
+                            <span>⚽ Match #{m['match_number']} | {group_lbl}</span>
                             <span class='badge-status badge-locked' style='background:rgba(239,68,68,0.15); color:#ef4444; border-color:#ef4444;'>🔴 LIVE</span>
                         </div>
                         <div class='teams-grid'>
@@ -1016,7 +1086,8 @@ with tab_matches:
                             💰 Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
                         </div>
                         <div class='card-footer' style='text-align:center;'>
-                            <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>Started: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
+                            <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
+                            <p style='margin:2px 0 0 0; font-size:0.8rem; color:#94a3b8;'>Started: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
                         </div>
                     </div>
                     """))
@@ -1025,7 +1096,7 @@ with tab_matches:
                     st.html(textwrap.dedent(f"""
                     <div class='match-card'>
                         <div class='card-meta'>
-                            <span>⚽ {m['group_name']}</span>
+                            <span>⚽ Match #{m['match_number']} | {group_lbl}</span>
                             <span class='badge-status badge-locked'>{status_str}</span>
                         </div>
                         <div class='teams-grid'>
@@ -1037,7 +1108,8 @@ with tab_matches:
                             💰 Match Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
                         </div>
                         <div class='card-footer' style='text-align:center;'>
-                            <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
+                            <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
+                            <p style='margin:2px 0 0 0; font-size:0.8rem; color:#94a3b8;'>Kickoff: {k_time.strftime('%Y-%m-%d %H:%M')} NPT</p>
                         </div>
                     </div>
                     """))
@@ -1094,11 +1166,13 @@ with tab_matches:
                         got_exact = (user_pred["pred_score_a"] == score_a and user_pred["pred_score_b"] == score_b)
                         points_awarded = pool_details["payout"] if got_exact else 0.0
                 
+                group_lbl = f"Group {m['group_name']}" if m['group_name'] else m['stage'].replace("-", " ").title()
+                city_lbl = m['city'].replace("-", " ").title()
                 # Render Card
                 st.html(textwrap.dedent(f"""
                 <div class='match-card' style='background:rgba(30,41,59,0.3); border-color:rgba(255,255,255,0.05);'>
                     <div class='card-meta'>
-                        <span>⚽ {m['group_name']}</span>
+                        <span>⚽ Match #{m['match_number']} | {group_lbl}</span>
                         <span class='badge-status badge-finished'>Finished</span>
                     </div>
                     <div class='teams-grid'>
@@ -1111,6 +1185,9 @@ with tab_matches:
                     </div>
                     <div style='font-size:0.8rem; color:#94a3b8; text-align:center; margin-top:5px;'>
                         💰 Pool: <b>{pool_details['total_pool']:.0f} pts</b> (Carryover: {pool_details['incoming_carry']:.0f})
+                    </div>
+                    <div class='card-footer' style='text-align:center;'>
+                        <p style='margin:0; font-size:0.8rem; color:#94a3b8;'>🏟 {m['stadium']} ({city_lbl})</p>
                     </div>
                 </div>
                 """))
@@ -1208,7 +1285,10 @@ if st.session_state.username == "admin" and tab_admin:
             with st.form("form_add_match"):
                 team_a_in = st.text_input("Team A Name").strip()
                 team_b_in = st.text_input("Team B Name").strip()
-                group_in = st.text_input("Group / Stage (e.g. Group A, Round of 16)").strip()
+                group_in = st.text_input("Group (if Group Stage, e.g. A, B or blank)").strip()
+                stage_in = st.selectbox("Stage", ["group-stage", "round-of-32", "round-of-16", "quarter-finals", "semi-finals", "third-place", "final"])
+                stadium_in = st.text_input("Stadium Name", "SoFi Stadium").strip()
+                city_in = st.text_input("Host City Name", "los-angeles").strip()
                 
                 nep_now = get_nepal_time()
                 c1, c2 = st.columns(2)
@@ -1219,18 +1299,23 @@ if st.session_state.username == "admin" and tab_admin:
                 
                 add_btn = st.form_submit_button("Add Match to Schedule", use_container_width=True)
                 if add_btn:
-                    if not team_a_in or not team_b_in or not group_in:
-                        st.error("All fields are required.")
+                    if not team_a_in or not team_b_in or not stage_in:
+                        st.error("Team names and Stage are required.")
                     else:
                         k_datetime = datetime.combine(kickoff_date, kickoff_time_in).strftime('%Y-%m-%d %H:%M:%S')
                         conn = sqlite3.connect(DB_PATH)
-                        conn.execute("""
-                            INSERT INTO matches (team_a, team_b, group_name, kickoff_time, score_a, score_b, finished)
-                            VALUES (?, ?, ?, ?, NULL, NULL, 0)
-                        """, (team_a_in, team_b_in, group_in, k_datetime))
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT MAX(match_number) FROM matches")
+                        max_num = cursor.fetchone()[0]
+                        next_match_num = (max_num + 1) if max_num is not None else 105
+                        
+                        cursor.execute("""
+                            INSERT INTO matches (match_number, team_a, team_b, group_name, stage, stadium, city, kickoff_time, score_a, score_b, finished)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0)
+                        """, (next_match_num, team_a_in, team_b_in, group_in, stage_in, stadium_in, city_in, k_datetime))
                         conn.commit()
                         conn.close()
-                        st.success(f"Added future match: {team_a_in} vs {team_b_in} on {k_datetime}")
+                        st.success(f"Added future match #{next_match_num}: {team_a_in} vs {team_b_in} on {k_datetime}")
                         st.rerun()
                         
         # Sub-tab C: User Account Management
