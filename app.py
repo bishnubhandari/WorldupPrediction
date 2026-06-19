@@ -6,11 +6,20 @@ import hashlib
 import os
 import textwrap
 from fpdf import FPDF
+from PIL import Image
 
-# --- Page Config ---
+# --- Page Config & Logo ---
+logo_path = r"D:\University\worldcup_predictor\zRSSLZa7bC9pfCYAf7-DxA_64x64.png"
+logo_img = "⚽"
+if os.path.exists(logo_path):
+    try:
+        logo_img = Image.open(logo_path)
+    except Exception:
+        pass
+
 st.set_page_config(
-    page_title="FIFA World Cup 2026 — Score Predictor",
-    page_icon="⚽",
+    page_title="FIFA World Cup 2026 cScore Predicotor",
+    page_icon=logo_img,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -715,11 +724,22 @@ st.html("""
 """)
 
 # --- Header ---
+import base64
+logo_b64 = ""
+if os.path.exists(logo_path):
+    try:
+        with open(logo_path, "rb") as f:
+            logo_b64 = base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        pass
+
+logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width:55px; height:55px; margin-bottom:8px;'><br>" if logo_b64 else "🏆 "
+
 now = get_nepal_time()
 st.html(f"""
 <div style='text-align: center; margin-top: -15px;'>
-    <h1 class='worldcup-title'>🏆 FIFA WORLD CUP 2026</h1>
-    <div class='worldcup-subtitle'>Socre predictor</div>
+    <h1 class='worldcup-title'>{logo_html}FIFA WORLD CUP 2026</h1>
+    <div class='worldcup-subtitle'>cScore Predicotor</div>
     <div class='server-time'>🕒 Current Time: <b>{now.strftime('%Y-%m-%d %H:%M:%S')} (Kathmandu Time)</b></div>
 </div>
 """)
