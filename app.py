@@ -444,6 +444,12 @@ def get_team_emoji(team_name):
     return emojis.get(team_name, "🏳️")
 
 def generate_match_pdf(match, predictions):
+    # Convert sqlite3.Row to dict to allow dictionary method access like .get()
+    try:
+        match = dict(match)
+    except Exception:
+        pass
+        
     pdf = FPDF()
     pdf.add_page()
     
@@ -1098,7 +1104,7 @@ with tab_matches:
                 emoji_b = get_team_emoji(m["team_b"])
                 
                 user_pred = None
-                if st.session_state.user_id:
+                if st.session_state.user_id and st.session_state.username != "admin":
                     user_pred = get_user_prediction(st.session_state.user_id, mid)
                     
                 pool_details = get_match_pool_and_payout(mid)
@@ -1126,7 +1132,7 @@ with tab_matches:
                 </div>
                 """))
                 
-                if st.session_state.user_id:
+                if st.session_state.user_id and st.session_state.username != "admin":
                     if user_pred:
                         st.html(textwrap.dedent(f"""
                         <div style='background:rgba(16,185,129,0.1); border:1px solid #10b981; border-radius:8px; padding:10px; text-align:center; font-size:0.9rem; margin-top:-10px; margin-bottom:20px; color:#10b981;'>
@@ -1146,7 +1152,7 @@ with tab_matches:
                                 if submit_prediction(st.session_state.user_id, mid, s_a, s_b):
                                     st.success("Prediction saved! It cannot be modified.")
                                     st.rerun()
-                else:
+                elif not st.session_state.user_id:
                     st.html("<p style='text-align:center; color:#94a3b8; font-size:0.85rem; margin-top:-10px; margin-bottom:20px;'>🔒 Login to submit prediction</p>")
         else:
             st.info("No matches currently open for prediction.")
@@ -1267,7 +1273,7 @@ with tab_matches:
                 
                 points_awarded = None
                 got_exact = False
-                if st.session_state.user_id:
+                if st.session_state.user_id and st.session_state.username != "admin":
                     user_pred = get_user_prediction(st.session_state.user_id, mid)
                     if user_pred:
                         got_exact = (user_pred["pred_score_a"] == score_a and user_pred["pred_score_b"] == score_b)
@@ -1363,6 +1369,11 @@ if st.session_state.username == "admin" and tab_admin:
                     st.markdown(f"#### ⚽ {m['team_a']} vs {m['team_b']} ({m['group_name']})")
                     st.write(f"Kickoff: {m['kickoff_time']}")
                     
+                    try:
+                        exist_kickoff = datetime.strptime(m['kickoff_time'], '%Y-%m-%d %H:%M:%S')
+                    except Exception:
+                        exist_kickoff = get_nepal_time()
+                        
                     with st.form(key=f"form_admin_finish_{mid}"):
                         col1, col2 = st.columns(2)
                         with col1:
@@ -1373,11 +1384,19 @@ if st.session_state.username == "admin" and tab_admin:
                         status_opt = ["Ongoing / Live", "Completed / Finished"]
                         m_status = st.selectbox("Update Match Status", options=status_opt, index=0, key=f"adm_status_{mid}")
                         
+                        st.write("**Update Kickoff Time (NPT):**")
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            new_date = st.date_input("Kickoff Date", value=exist_kickoff.date(), key=f"adm_date_{mid}")
+                        with c2:
+                            new_time = st.time_input("Kickoff Time", value=exist_kickoff.time(), key=f"adm_time_{mid}")
+                        
                         adm_submit = st.form_submit_button(f"Update Match #{mid}", use_container_width=True)
                         if adm_submit:
                             is_finished = 1 if m_status == "Completed / Finished" else 0
+                            new_kickoff = datetime.combine(new_date, new_time).strftime('%Y-%m-%d %H:%M:%S')
                             conn = sqlite3.connect(DB_PATH)
-                            conn.execute("UPDATE matches SET score_a = ?, score_b = ?, finished = ? WHERE id = ?", (sc_a, sc_b, is_finished, mid))
+                            conn.execute("UPDATE matches SET score_a = ?, score_b = ?, finished = ?, kickoff_time = ? WHERE id = ?", (sc_a, sc_b, is_finished, new_kickoff, mid))
                             conn.commit()
                             conn.close()
                             st.success(f"Match #{mid} updated successfully! ({m_status})")
@@ -1473,3 +1492,32 @@ if st.session_state.username == "admin" and tab_admin:
                                 conn.commit()
                                 conn.close()
                                 st.success(f"Password reset successfully for {su_display}!")
+                                
+            st.html("<hr style='border-color:rgba(255,255,255,0.05);'>")
+            st.subheader("➕ Create New User")
+            with st.form("form_create_user"):
+                new_display_name = st.text_input("Full Display Name").strip()
+                new_username = st.text_input("Username (alphanumeric only, e.g. john)").strip().lower()
+                new_password_in = st.text_input("Password", type="password")
+                
+                create_user_btn = st.form_submit_button("Create User", use_container_width=True)
+                if create_user_btn:
+                    if not new_display_name or not new_username or not new_password_in:
+                        st.error("All fields are required.")
+                    elif not new_username.isalnum():
+                        st.error("Username must be alphanumeric.")
+                    else:
+                        conn = sqlite3.connect(DB_PATH)
+                        existing = conn.execute("SELECT id FROM users WHERE username = ?", (new_username,)).fetchone()
+                        if existing:
+                            st.error(f"Username '@{new_username}' already exists.")
+                            conn.close()
+                        else:
+                            conn.execute(
+                                "INSERT INTO users (username, password, display_name, is_active) VALUES (?, ?, ?, 1)",
+                                (new_username, hash_password(new_password_in), new_display_name)
+                            )
+                            conn.commit()
+                            conn.close()
+                            st.success(f"User '{new_display_name}' (@{new_username}) created successfully!")
+                            st.rerun()
