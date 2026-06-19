@@ -810,7 +810,12 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
     
     st.markdown(f"### {emoji_a} {team_a} vs {emoji_b} {team_b}")
     
-    if finished == 1:
+    try:
+        is_finished = int(finished) == 1
+    except Exception:
+        is_finished = False
+
+    if is_finished:
         st.html(f"""
         <div style='background:rgba(251,191,36,0.1); border:1px solid #fbbf24; border-radius:8px; padding:15px; margin-bottom:15px;'>
             <h4 style='margin:0 0 5px 0; color:#fbbf24;'>Final Score: {score_a} - {score_b}</h4>
@@ -841,8 +846,11 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
         for p in preds:
             pa = p["pred_score_a"]
             pb = p["pred_score_b"]
-            if finished == 1:
-                is_winner = (pa == score_a and pb == score_b)
+            if is_finished:
+                try:
+                    is_winner = (int(pa) == int(score_a) and int(pb) == int(score_b))
+                except Exception:
+                    is_winner = False
                 if is_winner:
                     status_lbl = "<span style='color:#fbbf24; font-weight:700;'>🏆 Winner</span>"
                     pts_lbl = f"<b style='color:#10b981;'>+{pool_details['payout']:.1f}</b>"
@@ -852,9 +860,12 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
                     pts_lbl = "0"
                     bg_color = ""
             else:
-                live_a = score_a if score_a is not None else 0
-                live_b = score_b if score_b is not None else 0
-                is_active = (pa >= live_a) and (pb >= live_b)
+                live_a_val = int(score_a) if score_a is not None else 0
+                live_b_val = int(score_b) if score_b is not None else 0
+                try:
+                    is_active = (int(pa) >= live_a_val) and (int(pb) >= live_b_val)
+                except Exception:
+                    is_active = False
                 if is_active:
                     status_lbl = "<span style='color:#10b981; font-weight:600;'>🟢 Active</span>"
                     bg_color = "background-color:rgba(16,185,129,0.05);"
@@ -1192,6 +1203,9 @@ with tab_matches:
                     </div>
                 </div>
                 """))
+                
+                if st.button("📊 View Predictions Summary", key=f"finish_sum_{mid}", use_container_width=True):
+                    show_prediction_summary_dialog(mid, m['team_a'], m['team_b'], score_a, score_b, m['finished'])
                 
                 # Admin PDF download
                 if st.session_state.username == "admin":
