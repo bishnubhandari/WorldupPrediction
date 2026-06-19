@@ -852,34 +852,28 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
         """)
 
     if preds:
-        html_content = "<table class='table-leaderboard' style='font-size:0.9rem; text-align:center;'><thead><tr><th>Predictor</th><th>Prediction</th><th>Status</th><th>Points Won</th></tr></thead><tbody>"
-        for p in preds:
-            pa = p["pred_score_a"]
-            pb = p["pred_score_b"]
+        # Convert to list and calculate sort categories (1: Winner/Active, 2: Correct Outcome, 3: Incorrect/Out)
+        preds_list = []
+        for r in preds:
+            pa = r["pred_score_a"]
+            pb = r["pred_score_b"]
+            
+            is_winner = False
+            outcome_match = False
+            
             if is_finished:
                 try:
                     is_winner = (int(pa) == int(score_a) and int(pb) == int(score_b))
                 except Exception:
                     is_winner = False
-                if is_winner:
-                    status_lbl = "<span style='color:#fbbf24; font-weight:700;'>🏆 Winner</span>"
-                    pts_lbl = f"<b style='color:#10b981;'>+{pool_details['payout']:.1f}</b>"
-                    bg_color = "background-color:rgba(251,191,36,0.15);"
-                else:
-                    # Check if outcome (winner/draw/loss) matches
+                if not is_winner:
                     try:
                         pred_diff = int(pa) - int(pb)
                         act_diff = int(score_a) - int(score_b)
                         outcome_match = (pred_diff > 0 and act_diff > 0) or (pred_diff < 0 and act_diff < 0) or (pred_diff == 0 and act_diff == 0)
                     except Exception:
                         outcome_match = False
-                    
-                    if outcome_match:
-                        status_lbl = "<span style='color:#38bdf8; font-weight:600;'>Correct Outcome</span>"
-                    else:
-                        status_lbl = "<span style='color:#94a3b8;'>Incorrect</span>"
-                    pts_lbl = "0"
-                    bg_color = ""
+                sort_cat = 1 if is_winner else (2 if outcome_match else 3)
             else:
                 live_a_val = int(score_a) if score_a is not None else 0
                 live_b_val = int(score_b) if score_b is not None else 0
@@ -887,7 +881,37 @@ def show_prediction_summary_dialog(match_id, team_a, team_b, score_a, score_b, f
                     is_active = (int(pa) >= live_a_val) and (int(pb) >= live_b_val)
                 except Exception:
                     is_active = False
-                if is_active:
+                sort_cat = 1 if is_active else 3
+                
+            preds_list.append({
+                "display_name": r["display_name"],
+                "pred_score_a": pa,
+                "pred_score_b": pb,
+                "sort_cat": sort_cat
+            })
+            
+        # Sort by sort_cat ASC, then display_name ASC
+        preds_list.sort(key=lambda x: (x["sort_cat"], x["display_name"]))
+
+        html_content = "<table class='table-leaderboard' style='font-size:0.9rem; text-align:center;'><thead><tr><th>Predictor</th><th>Prediction</th><th>Status</th><th>Points Won</th></tr></thead><tbody>"
+        for p in preds_list:
+            pa = p["pred_score_a"]
+            pb = p["pred_score_b"]
+            if is_finished:
+                if p["sort_cat"] == 1:
+                    status_lbl = "<span style='color:#fbbf24; font-weight:700;'>🏆 Winner</span>"
+                    pts_lbl = f"<b style='color:#10b981;'>+{pool_details['payout']:.1f}</b>"
+                    bg_color = "background-color:rgba(251,191,36,0.15);"
+                elif p["sort_cat"] == 2:
+                    status_lbl = "<span style='color:#38bdf8; font-weight:600;'>Correct Outcome</span>"
+                    pts_lbl = "0"
+                    bg_color = "background-color:rgba(56,189,248,0.05);"
+                else:
+                    status_lbl = "<span style='color:#94a3b8;'>Incorrect</span>"
+                    pts_lbl = "0"
+                    bg_color = ""
+            else:
+                if p["sort_cat"] == 1:
                     status_lbl = "<span style='color:#10b981; font-weight:600;'>🟢 Active</span>"
                     bg_color = "background-color:rgba(16,185,129,0.05);"
                 else:
