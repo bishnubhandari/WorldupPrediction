@@ -984,6 +984,7 @@ with tab_matches:
         else:
             locked_matches.append(m)
             
+    finished_matches = list(reversed(finished_matches))
     col_open, col_locked, col_finished = st.columns(3)
     
     # Column A: Open for Predictions
