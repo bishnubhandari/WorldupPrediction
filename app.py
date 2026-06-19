@@ -320,7 +320,7 @@ def get_match_pool_and_payout(target_match_id):
                     if p["pred_score_a"] == act_a and p["pred_score_b"] == act_b:
                         winners.append(p["user_id"])
             payout = total_pool / len(winners) if len(winners) > 0 else 0.0
-            outgoing = 0.0 if len(winners) > 0 or finished == 0 else total_pool * 2.0
+            outgoing = 0.0 if len(winners) > 0 or finished == 0 else total_pool
             return {
                 "incoming_carry": carry_forward,
                 "base_pool": base_pool,
@@ -339,7 +339,7 @@ def get_match_pool_and_payout(target_match_id):
             if len(winners) > 0:
                 carry_forward = 0.0
             else:
-                carry_forward = total_pool * 2.0
+                carry_forward = total_pool
                 
     return {
         "incoming_carry": 0.0,
@@ -408,7 +408,7 @@ def get_leaderboard():
                         user_stats[wid]["exact_wins"] += 1
                 carry_forward = 0.0
             else:
-                carry_forward = total_pool * 2.0
+                carry_forward = total_pool
                 
     for uid in user_stats:
         user_stats[uid]["points"] = user_stats[uid]["points_won"] - user_stats[uid]["points_cost"]
@@ -903,9 +903,7 @@ with tab_leaderboard:
     """, (get_nepal_time().strftime('%Y-%m-%d %H:%M:%S'),)).fetchall()
     conn.close()
     
-    # Sort matches chronologically (left to right)
-    recent_matches = list(reversed(recent_matches))
-    
+    # Show recent match first (recent to past order)
     if recent_matches:
         cols = st.columns(len(recent_matches))
         for idx, m in enumerate(recent_matches):
@@ -978,7 +976,7 @@ with tab_leaderboard:
     st.html("<hr style='border-color:rgba(255,255,255,0.05);'>")
     
     st.subheader("Leaderboard Standings")
-    st.write("Calculated points rules: Each prediction costs **100 pts**. Whichever user gets the exact score right splits the total match points pool equally. If no one is right, the pool carries forward and doubles!")
+    st.write("Calculated points rules: Each prediction costs **100 pts**. Whichever user gets the exact score right splits the total match points pool equally. If no one is right, the pool carries forward to the next match!")
     
     leaderboard_data = get_leaderboard()
     
