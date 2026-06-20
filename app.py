@@ -36,6 +36,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+DB_PATH = "worldcup.db"
+
+
 # --- Nepal timezone helpers ---
 from datetime import datetime, timedelta, timezone
 
@@ -625,7 +628,6 @@ def check_password(hashed, input_password):
     return hashed == hashlib.sha256(input_password.encode()).hexdigest()
 
 # --- Database Initialization ---
-DB_PATH = "worldcup.db"
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
