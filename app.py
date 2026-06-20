@@ -141,8 +141,7 @@ def scrape_score_from_fifa_url(url):
             away_score = parsed.get("AwayTeam", {}).get("Score")
             
             period = parsed.get("Period")
-            match_status = parsed.get("MatchStatus")
-            is_finished = (period == 5 or match_status == 3)
+            is_finished = (period in [5, 10]) if period is not None else False
             
             match_time = parsed.get("MatchTime", "")
             
@@ -510,8 +509,8 @@ def sync_live_fifa_scores():
             elif res:
                 is_finished = 1 if res["is_finished"] else 0
                 conn.execute(
-                    "UPDATE matches SET score_a = ?, score_b = ?, finished = ? WHERE id = ?",
-                    (res["home_score"], res["away_score"], is_finished, m["id"])
+                    "UPDATE matches SET score_a = ?, score_b = ?, finished = ?, match_time = ? WHERE id = ?",
+                    (res["home_score"], res["away_score"], is_finished, res["match_time"], m["id"])
                 )
                 updated_count += 1
         except Exception as ex:
@@ -665,7 +664,8 @@ def init_db():
             score_a INTEGER DEFAULT NULL,
             score_b INTEGER DEFAULT NULL,
             finished INTEGER DEFAULT 0,
-            fifa_url TEXT DEFAULT NULL
+            fifa_url TEXT DEFAULT NULL,
+            match_time TEXT DEFAULT NULL
         )
     """)
     
@@ -682,6 +682,8 @@ def init_db():
             cursor.execute("ALTER TABLE matches ADD COLUMN city TEXT DEFAULT NULL")
         if "fifa_url" not in m_columns:
             cursor.execute("ALTER TABLE matches ADD COLUMN fifa_url TEXT DEFAULT NULL")
+        if "match_time" not in m_columns:
+            cursor.execute("ALTER TABLE matches ADD COLUMN match_time TEXT DEFAULT NULL")
         conn.commit()
     
     # 3. Predictions Table
@@ -1859,12 +1861,13 @@ if _live_matches_now:
         _sa = f"{_lm['score_a']}" if _lm['score_a'] is not None else "?"
         _sb = f"{_lm['score_b']}" if _lm['score_b'] is not None else "?"
         _score_disp = f"{_sa} – {_sb}" if _lm['score_a'] is not None else "Ongoing"
+        _time_str = f" ({_lm['match_time']})" if _lm['match_time'] else ""
         st.markdown(
             f"<div style='background:linear-gradient(90deg,rgba(220,38,38,0.9),rgba(239,68,68,0.7)); "
             f"border-radius:10px; padding:10px 20px; margin-bottom:10px; "
             f"display:flex; align-items:center; gap:12px; animation:pulse 1.5s infinite;'>"
             f"<span style='font-size:1.3rem;'>🔴</span>"
-            f"<span style='color:white; font-weight:700; font-size:1.05rem; letter-spacing:0.05em;'>LIVE</span>"
+            f"<span style='color:white; font-weight:700; font-size:1.05rem; letter-spacing:0.05em;'>LIVE{_time_str}</span>"
             f"<span style='color:#fef2f2; font-size:1.05rem;'>{_lm['team_a']} <b style=\"color:white\">{_score_disp}</b> {_lm['team_b']}</span>"
             f"<span style='margin-left:auto; color:rgba(255,255,255,0.7); font-size:0.8rem;'></span>"
             f"</div>",
@@ -1967,7 +1970,8 @@ with tab_leaderboard:
                         """
                 elif m["score_a"] is not None and m["score_b"] is not None:
                     score_str = f"<b style='color:#ef4444; font-size:1.2rem;'>{m['score_a']} - {m['score_b']}</b>"
-                    status_badge = "<span class='badge-status badge-locked' style='background:rgba(239,68,68,0.15); color:#ef4444; border-color:#ef4444; display:block; margin:4px auto; text-align:center;'>🔴 LIVE</span>"
+                    _t_badge = f" ({m['match_time']})" if m['match_time'] else ""
+                    status_badge = f"<span class='badge-status badge-locked' style='background:rgba(239,68,68,0.15); color:#ef4444; border-color:#ef4444; display:block; margin:4px auto; text-align:center;'>🔴 LIVE{_t_badge}</span>"
                 else:
                     score_str = "<b style='color:#cbd5e1; font-size:1.1rem;'>vs</b>"
                     status_badge = "<span class='badge-status badge-locked' style='display:block; margin:4px auto; text-align:center;'>Locked</span>"
@@ -2129,11 +2133,12 @@ with tab_matches:
                 city_lbl = m['city'].replace("-", " ").title()
                 # Render Card
                 if is_live:
+                    _t_badge = f" ({m['match_time']})" if m['match_time'] else ""
                     st.html(textwrap.dedent(f"""
                     <div class='match-card' style='border-color:#ef4444;'>
                         <div class='card-meta'>
                             <span>⚽ Match #{m['match_number']} | {group_lbl}</span>
-                            <span class='badge-status badge-locked' style='background:rgba(239,68,68,0.15); color:#ef4444; border-color:#ef4444;'>🔴 LIVE</span>
+                            <span class='badge-status badge-locked' style='background:rgba(239,68,68,0.15); color:#ef4444; border-color:#ef4444;'>🔴 LIVE{_t_badge}</span>
                         </div>
                         <div class='teams-grid'>
                             <div class='team-block'><span class='team-flag'>{emoji_a}</span>{m['team_a']}</div>
@@ -2587,7 +2592,7 @@ if st.session_state.username == "admin" and tab_admin:
                                 elif res:
                                     is_finished = 1 if res["is_finished"] else 0
                                     conn = sqlite3.connect(DB_PATH)
-                                    conn.execute("UPDATE matches SET score_a = ?, score_b = ?, finished = ? WHERE id = ?", (res["home_score"], res["away_score"], is_finished, mid))
+                                    conn.execute("UPDATE matches SET score_a = ?, score_b = ?, finished = ?, match_time = ? WHERE id = ?", (res["home_score"], res["away_score"], is_finished, res["match_time"], mid))
                                     conn.commit()
                                     conn.close()
                                     st.success(f"Success! Updated Match #{mid} to: {res['home_team']} {res['home_score']} – {res['away_score']} {res['away_team']} ({res['match_time']})")
