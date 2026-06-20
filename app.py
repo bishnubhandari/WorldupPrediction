@@ -690,7 +690,7 @@ def init_db():
         if cursor.fetchone() is None:
             cursor.execute("INSERT INTO users (username, password, display_name, is_active) VALUES (?, ?, ?, 1)", (username, password, display_name))
         else:
-            cursor.execute("UPDATE users SET password = ?, display_name = ? WHERE username = ?", (password, display_name, username))
+            cursor.execute("UPDATE users SET display_name = ? WHERE username = ?", (display_name, username))
     conn.commit()
     
     # Populate matches from JSON if matches table is empty
@@ -1813,11 +1813,11 @@ if _live_matches_now:
         )
 
 # --- Main App Pages ---
-tabs = ["🏆 Leaderboard", "⚽ Matches & Predictions", "🌍 Group Tables", "📋 Teams & Lineups"]
+tabs = ["🏆 Leaderboard", "⚽ Matches & Predictions", "🌍 Group Tables", "⚽ Top Goalscorers", "📋 Teams & Lineups"]
 if st.session_state.username == "admin":
     tabs.append("🛠️ Admin Controls")
 
-tab_leaderboard, tab_matches, tab_groups, tab_lineups, *tab_admin = st.tabs(tabs)
+tab_leaderboard, tab_matches, tab_groups, tab_scorers, tab_lineups, *tab_admin = st.tabs(tabs)
 
 # --- Tab 1: Leaderboard ---
 with tab_leaderboard:
@@ -2237,50 +2237,48 @@ with tab_matches:
         else:
             st.info("No matches finished yet.")
 
-# --- Tab 3: Group Tables & Goalscorers ---
+# --- Tab 3: Group Tables ---
 with tab_groups:
     st.subheader("🌍 FIFA World Cup 2026 — Group Tables")
-    st.write("Group standings and goalscorers")
+    st.write("Group standings from Wikipedia.")
     
-    # Show last sync time and next scheduled sync
-    with _SYNC_LOCK:
-        last_sync_time = _LAST_SYNC.get("time")
-        last_sync_err  = _LAST_SYNC.get("error")
-        last_sync_reason = _LAST_SYNC.get("reason", "")
-    
-    _eta_secs, _eta_reason = _next_sync_eta()
-    
-    col_sync_info, col_sync_btn = st.columns([3, 1])
-    with col_sync_info:
-        if last_sync_time:
-            time_ago = int((datetime.utcnow() - last_sync_time).total_seconds() / 60)
-            reason_txt = f" ({last_sync_reason})" if last_sync_reason else ""
-            st.caption(f"Last sync: {time_ago} min ago{reason_txt}")
+    # Show last sync time and next scheduled sync (Admin only)
+    if st.session_state.get("username") == "admin":
+        with _SYNC_LOCK:
+            last_sync_time = _LAST_SYNC.get("time")
+            last_sync_err  = _LAST_SYNC.get("error")
+            last_sync_reason = _LAST_SYNC.get("reason", "")
         
-        if _eta_secs is not None:
-            eta_min = int(_eta_secs // 60)
-            eta_label = {"HT": "Halftime", "FT": "Full Time", "ET-HT": "ET Halftime", "ET-FT": "ET Full Time"}.get(_eta_reason, _eta_reason)
-            st.caption(f"Next auto-sync: ~{eta_min} min ({eta_label})")
-        else:
-            st.caption("Auto-sync: fires at halftime and full time of each match.")
-        if last_sync_err:
-            st.caption(f"Last sync error: {last_sync_err}")
-    with col_sync_btn:
-        if st.button("🔄 Refresh Now", key="grp_manual_sync", use_container_width=True):
-            with st.spinner("Fetching from Wikipedia..."):
-                WIKI_CACHE["fetched_at"] = None  # force re-fetch
-                _upd, _err = sync_scores_from_wiki()
-                with _SYNC_LOCK:
-                    _LAST_SYNC["time"] = datetime.utcnow()
-                    _LAST_SYNC["updated"] = _upd
-                    _LAST_SYNC["error"] = _err
-                    _LAST_SYNC["reason"] = "manual"
-            if _err:
-                st.warning(f"Sync warning: {_err}")
-            else:
-                st.success(f"Refreshed! {_upd} match(es) updated.")
-    
-    st.html("<hr style='border-color:rgba(251,191,36,0.2); margin: 10px 0 20px 0;'>")
+        _eta_secs, _eta_reason = _next_sync_eta()
+        
+        col_sync_info, col_sync_btn = st.columns([3, 1])
+        with col_sync_info:
+            if last_sync_time:
+                time_ago = int((datetime.utcnow() - last_sync_time).total_seconds() / 60)
+                reason_txt = f" ({last_sync_reason})" if last_sync_reason else ""
+                st.caption(f"Last sync: {time_ago} min ago{reason_txt}")
+            
+            if _eta_secs is not None:
+                eta_min = int(_eta_secs // 60)
+                eta_label = {"HT": "Halftime", "FT": "Full Time", "ET-HT": "ET Halftime", "ET-FT": "ET Full Time"}.get(_eta_reason, _eta_reason)
+                st.caption(f"Next auto-sync: ~{eta_min} min ({eta_label})")
+            if last_sync_err:
+                st.caption(f"Last sync error: {last_sync_err}")
+        with col_sync_btn:
+            if st.button("🔄 Refresh Now", key="grp_manual_sync", use_container_width=True):
+                with st.spinner("Fetching from Wikipedia..."):
+                    WIKI_CACHE["fetched_at"] = None  # force re-fetch
+                    _upd, _err = sync_scores_from_wiki()
+                    with _SYNC_LOCK:
+                        _LAST_SYNC["time"] = datetime.utcnow()
+                        _LAST_SYNC["updated"] = _upd
+                        _LAST_SYNC["error"] = _err
+                        _LAST_SYNC["reason"] = "manual"
+                if _err:
+                    st.warning(f"Sync warning: {_err}")
+                else:
+                    st.success(f"Refreshed! {_upd} match(es) updated.")
+        st.html("<hr style='border-color:rgba(251,191,36,0.2); margin: 10px 0 20px 0;'>")
     
     # Fetch group tables
     with st.spinner("Loading group standings..."):
@@ -2354,11 +2352,12 @@ with tab_groups:
                     table_html += "</tbody></table>"
                     st.html(table_html)
     else:
-        st.info("Group standings are not yet available. They will appear once the tournament begins and Wikipedia is updated. Click '🔄 Refresh Now' to try fetching.")
-    
-    # --- Top Goalscorers ---
-    st.html("<hr style='border-color:rgba(251,191,36,0.2); margin: 10px 0 20px 0;'>")
+        st.info("Group standings are not yet available. They will appear once the tournament begins and Wikipedia is updated.")
+
+# --- Tab 4: Top Goalscorers ---
+with tab_scorers:
     st.subheader("⚽ Top Goalscorers")
+    st.write("Live tournament goalscorers from Wikipedia.")
     
     with st.spinner("Loading goalscorers..."):
         scorers = parse_wiki_goalscorers()
@@ -2389,7 +2388,7 @@ with tab_groups:
     else:
         st.info("Goalscorer data is not yet available. It will appear once matches begin.")
 
-# --- Tab 4: Teams & Lineups ---
+# --- Tab 5: Teams & Lineups ---
 with tab_lineups:
     st.subheader("📋 World Cup 2026 Teams & Lineups")
     st.write("Browse team rosters, qualified squad profiles, head coaches, and historic World Cup records.")
