@@ -1623,7 +1623,7 @@ logo_html = f"<img src='data:image/png;base64,{logo_b64}' style='width:55px; hei
 
 now = get_nepal_time()
 st.html(f"""
-<div style='text-align: center; margin-top: -15px;'>
+<div style='text-align: center; margin-top: 40px;'>
     <div style='background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.25); border-radius:8px; padding:10px 15px; margin:0px auto 20px auto; max-width:800px; text-align:center;'>
         <span style='color:#fbbf24; font-weight:700; font-size:0.85rem; letter-spacing:0.05em; display:block; margin-bottom:4px;'>📢 STUDY & FUN DISCLAIMER</span>
         <span style='color:#cbd5e1; font-size:0.8rem; line-height:1.4;'>
