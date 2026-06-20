@@ -99,6 +99,62 @@ def _fetch_wiki_html():
         return WIKI_CACHE.get("html")  # return stale on error
 
 
+import ssl
+
+def scrape_score_from_fifa_url(url):
+    """
+    Parses a FIFA match centre URL and fetches the score directly from the FIFA live API.
+    Example URL: https://www.fifa.com/en/match-centre/match/17/285023/289273/400021457
+    Returns: (dict_details, err_message)
+    """
+    try:
+        pattern = r"match-centre/match/(\d+)/(\d+)/(\d+)/(\d+)"
+        m = re.search(pattern, url)
+        if not m:
+            return None, "Invalid FIFA match URL structure. Make sure it contains competition/season/stage/match IDs."
+        
+        comp_id, season_id, stage_id, match_id = m.groups()
+        api_url = f"https://api.fifa.com/api/v3/live/football/{comp_id}/{season_id}/{stage_id}/{match_id}"
+        
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        
+        req = Request(
+            api_url,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urlopen(req, timeout=10, context=ctx) as resp:
+            data = resp.read()
+            parsed = json.loads(data.decode("utf-8"))
+            
+            home_names = parsed.get("HomeTeam", {}).get("TeamName", [])
+            away_names = parsed.get("AwayTeam", {}).get("TeamName", [])
+            
+            home_team = home_names[0]["Description"] if home_names else "Home Team"
+            away_team = away_names[0]["Description"] if away_names else "Away Team"
+            
+            home_score = parsed.get("HomeTeam", {}).get("Score")
+            away_score = parsed.get("AwayTeam", {}).get("Score")
+            
+            period = parsed.get("Period")
+            match_status = parsed.get("MatchStatus")
+            is_finished = (period == 5 or match_status == 3)
+            
+            match_time = parsed.get("MatchTime", "")
+            
+            return {
+                "home_team": home_team,
+                "home_score": home_score,
+                "away_team": away_team,
+                "away_score": away_score,
+                "is_finished": is_finished,
+                "match_time": match_time
+            }, None
+    except Exception as e:
+        return None, str(e)
+
+
 def _clean_text(s):
     """Strip HTML tags and normalize whitespace/HTML entities."""
     s = re.sub(r'<[^>]+>', '', s)
@@ -2519,6 +2575,27 @@ if st.session_state.username == "admin" and tab_admin:
                         
                         status_opt = ["Ongoing / Live", "Completed / Finished"]
                         m_status = st.selectbox("Update Match Status", options=status_opt, index=0, key=f"adm_status_{mid}")
+                        
+                        st.markdown("<p style='margin-bottom:2px; font-weight:600;'>Auto-sync from FIFA Match URL (Optional):</p>", unsafe_allow_html=True)
+                        fifa_url_in = st.text_input("FIFA Match URL", value="", key=f"fifa_url_{mid}", label_visibility="collapsed")
+                        fetch_btn = st.form_submit_button(f"🔌 Fetch & Update from FIFA URL", use_container_width=True)
+                        if fetch_btn:
+                            if not fifa_url_in:
+                                st.error("Please paste a valid FIFA Match URL first.")
+                            else:
+                                with st.spinner("Fetching score..."):
+                                    res, err = scrape_score_from_fifa_url(fifa_url_in)
+                                if err:
+                                    st.error(f"Error fetching from FIFA: {err}")
+                                elif res:
+                                    is_finished = 1 if res["is_finished"] else 0
+                                    conn = sqlite3.connect(DB_PATH)
+                                    conn.execute("UPDATE matches SET score_a = ?, score_b = ?, finished = ? WHERE id = ?", (res["home_score"], res["away_score"], is_finished, mid))
+                                    conn.commit()
+                                    conn.close()
+                                    st.success(f"Success! Updated Match #{mid} to: {res['home_team']} {res['home_score']} – {res['away_score']} {res['away_team']} ({res['match_time']})")
+                                    st.rerun()
+
                         
                         st.write("**Update Kickoff Time (NPT):**")
                         c1, c2 = st.columns(2)
