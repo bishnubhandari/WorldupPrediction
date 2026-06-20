@@ -471,137 +471,105 @@ def sync_scores_from_wiki():
         conn.close()
     
     return updated, None
-# --- Smart Background Sync: fires at halftime, full-time, ET halftime, ET full-time ---
-_SYNC_LOCK = threading.Lock()
-_LAST_SYNC = {"time": None, "updated": 0, "error": None, "next_sync": None, "reason": ""}
-
-# Sync windows in seconds after kickoff (name, start_sec, end_sec)
-# We allow a 5-min window around each target to catch the check cycle
-_SYNC_WINDOWS = [
-    ("HT",   45 * 60,  55 * 60),   # halftime: 45–55 min
-    ("FT",   90 * 60, 105 * 60),   # full time: 90–105 min
-    ("ET-HT",105 * 60, 115 * 60),  # extra-time halftime: 105–115 min
-    ("ET-FT",120 * 60, 135 * 60),  # extra-time full time: 120–135 min
-]
-
-# Track which (match_id, window_name) pairs have already been synced this session
-_SYNCED_WINDOWS: set = set()
-
-
-def _has_live_match():
-    """Check DB for any match currently in progress (kicked off in last 2.5 hrs, not finished)."""
+def sync_live_fifa_scores():
+    """
+    Finds currently playing matches (kickoff is between now - 3 hrs and now)
+    and updates their scores from the official FIFA Match Centre URL if set.
+    Returns (updated_count, errors)
+    """
+    now_utc = datetime.utcnow()
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    active_matches = []
     try:
-        now_utc = datetime.utcnow()
-        conn = sqlite3.connect(DB_PATH)
-        rows = conn.execute("SELECT kickoff_time FROM matches WHERE finished = 0").fetchall()
-        conn.close()
-        for (ko,) in rows:
+        rows = conn.execute("SELECT * FROM matches WHERE finished = 0 AND fifa_url IS NOT NULL").fetchall()
+        for r in rows:
             try:
-                ko_dt = datetime.strptime(ko, '%Y-%m-%d %H:%M:%S')
+                ko_dt = datetime.strptime(r['kickoff_time'], '%Y-%m-%d %H:%M:%S')
                 ko_utc = ko_dt - timedelta(hours=5, minutes=45)
                 elapsed = (now_utc - ko_utc).total_seconds()
-                if 0 <= elapsed <= 9000:  # 0 to 2.5 hours after kickoff
-                    return True
+                # Match is considered active from kickoff to 3 hours later
+                if 0 <= elapsed <= 10800:
+                    active_matches.append(r)
             except Exception:
                 pass
-    except Exception:
-        pass
-    return False
-
-
-def _get_matches_needing_sync():
-    """
-    Returns list of match rows that need a Wikipedia sync right now.
-    A match needs sync if:
-      - It is unfinished
-      - Its elapsed time since kickoff falls within a sync window
-      - That (match_id, window) combo hasn't been synced yet this session
-    """
-    try:
-        now_utc = datetime.utcnow()
-        conn = sqlite3.connect(DB_PATH)
-        rows = conn.execute(
-            "SELECT id, team_a, team_b, kickoff_time FROM matches WHERE finished = 0"
-        ).fetchall()
+    except Exception as e:
         conn.close()
-    except Exception:
-        return []
-
-    need_sync = []
-    for row in rows:
+        return 0, str(e)
+    
+    updated_count = 0
+    errors = []
+    for m in active_matches:
         try:
-            mid, team_a, team_b, ko = row
-            ko_dt = datetime.strptime(ko, '%Y-%m-%d %H:%M:%S')
-            ko_utc = ko_dt - timedelta(hours=5, minutes=45)
-            elapsed = (now_utc - ko_utc).total_seconds()
+            res, err = scrape_score_from_fifa_url(m['fifa_url'])
+            if err:
+                errors.append(f"Match #{m['match_number']}: {err}")
+            elif res:
+                is_finished = 1 if res["is_finished"] else 0
+                conn.execute(
+                    "UPDATE matches SET score_a = ?, score_b = ?, finished = ? WHERE id = ?",
+                    (res["home_score"], res["away_score"], is_finished, m["id"])
+                )
+                updated_count += 1
+        except Exception as ex:
+            errors.append(f"Match #{m['match_number']}: {ex}")
+            
+    conn.commit()
+    conn.close()
+    return updated_count, "; ".join(errors) if errors else None
 
-            for win_name, win_start, win_end in _SYNC_WINDOWS:
-                key = (mid, win_name)
-                if win_start <= elapsed <= win_end and key not in _SYNCED_WINDOWS:
-                    need_sync.append((mid, team_a, team_b, win_name))
-                    break  # only one window per match per cycle
-        except Exception:
-            pass
-    return need_sync
 
-
-def _next_sync_eta():
-    """Return seconds until next expected sync, and its reason, for display."""
-    try:
-        now_utc = datetime.utcnow()
-        conn = sqlite3.connect(DB_PATH)
-        rows = conn.execute(
-            "SELECT id, kickoff_time FROM matches WHERE finished = 0"
-        ).fetchall()
-        conn.close()
-    except Exception:
-        return None, ""
-
-    soonest = None
-    soonest_reason = ""
-    for (mid, ko) in rows:
-        try:
-            ko_dt = datetime.strptime(ko, '%Y-%m-%d %H:%M:%S')
-            ko_utc = ko_dt - timedelta(hours=5, minutes=45)
-            elapsed = (now_utc - ko_utc).total_seconds()
-            for win_name, win_start, _ in _SYNC_WINDOWS:
-                if (mid, win_name) in _SYNCED_WINDOWS:
-                    continue
-                wait = win_start - elapsed
-                if wait >= 0:
-                    if soonest is None or wait < soonest:
-                        soonest = wait
-                        soonest_reason = win_name
-                    break  # windows are in order; first unseen is the next one
-        except Exception:
-            pass
-    return soonest, soonest_reason
+# --- Smart Background Sync: FIFA Live during matches, Wikipedia post-match ---
+_SYNC_LOCK = threading.Lock()
+_LAST_SYNC = {"time": None, "updated": 0, "error": None, "reason": ""}
 
 
 def _background_sync_loop():
     """
-    Wakes every 60 seconds and checks whether any live match just crossed
-    a sync window (HT/FT/ET-HT/ET-FT). Syncs Wikipedia only when needed.
+    Runs every 2 minutes:
+    - If any match is currently playing, updates scores from FIFA live API.
+    - Otherwise (outside match windows), syncs group tables and goalscorers from Wikipedia.
     """
     while True:
         try:
-            time_module.sleep(60)  # wake every minute to check
-            to_sync = _get_matches_needing_sync()
-            if to_sync:
-                WIKI_CACHE["fetched_at"] = None  # force fresh Wikipedia fetch
-                updated, err = sync_scores_from_wiki()
-                now = datetime.utcnow()
-                # Mark all triggered windows as done
-                for (mid, team_a, team_b, win_name) in to_sync:
-                    _SYNCED_WINDOWS.add((mid, win_name))
-                reasons = ", ".join(f"{t[1]} vs {t[2]} @ {t[3]}" for t in to_sync)
-                eta, eta_reason = _next_sync_eta()
+            time_module.sleep(120)
+            
+            # Check if any matches are active now
+            now_utc = datetime.utcnow()
+            conn = sqlite3.connect(DB_PATH)
+            conn.row_factory = sqlite3.Row
+            active_rows = conn.execute("SELECT id, team_a, team_b, kickoff_time, fifa_url FROM matches WHERE finished = 0").fetchall()
+            conn.close()
+            
+            currently_live = []
+            for r in active_rows:
+                try:
+                    ko_dt = datetime.strptime(r['kickoff_time'], '%Y-%m-%d %H:%M:%S')
+                    ko_utc = ko_dt - timedelta(hours=5, minutes=45)
+                    elapsed = (now_utc - ko_utc).total_seconds()
+                    if 0 <= elapsed <= 10800:
+                        currently_live.append(r)
+                except Exception:
+                    pass
+            
+            if currently_live:
+                # During match: sync live score from FIFA API
+                updated, err = sync_live_fifa_scores()
+                reason = "Live FIFA scores: " + ", ".join(f"{m['team_a']} vs {m['team_b']}" for m in currently_live)
                 with _SYNC_LOCK:
-                    _LAST_SYNC["time"] = now
+                    _LAST_SYNC["time"] = datetime.utcnow()
                     _LAST_SYNC["updated"] = updated
                     _LAST_SYNC["error"] = err
-                    _LAST_SYNC["reason"] = reasons
-                    _LAST_SYNC["next_sync"] = eta
+                    _LAST_SYNC["reason"] = reason
+            else:
+                # Post-match: sync standings and goalscorers from Wikipedia
+                WIKI_CACHE["fetched_at"] = None  # force fresh fetch
+                updated, err = sync_scores_from_wiki()
+                with _SYNC_LOCK:
+                    _LAST_SYNC["time"] = datetime.utcnow()
+                    _LAST_SYNC["updated"] = updated
+                    _LAST_SYNC["error"] = err
+                    _LAST_SYNC["reason"] = "Wikipedia post-match sync"
         except Exception as e:
             with _SYNC_LOCK:
                 _LAST_SYNC["error"] = str(e)
@@ -613,21 +581,38 @@ if "_wiki_sync_started" not in st.session_state:
     t.start()
     st.session_state["_wiki_sync_started"] = True
 
-# On every page load: check if we just missed a sync window (app was restarted mid-match)
+# On every page load: check if we just missed a sync cycle and have active live matches
 with _SYNC_LOCK:
     _last_sync_time = _LAST_SYNC.get("time")
 
-_pending_on_load = _get_matches_needing_sync()
-if _pending_on_load:
-    WIKI_CACHE["fetched_at"] = None
-    _upd, _err = sync_scores_from_wiki()
-    for (mid, team_a, team_b, win_name) in _pending_on_load:
-        _SYNCED_WINDOWS.add((mid, win_name))
-    with _SYNC_LOCK:
-        _LAST_SYNC["time"] = datetime.utcnow()
-        _LAST_SYNC["updated"] = _upd
-        _LAST_SYNC["error"] = _err
-        _LAST_SYNC["reason"] = "on-load catch-up"
+_now_utc = datetime.utcnow()
+_conn_active = sqlite3.connect(DB_PATH)
+_conn_active.row_factory = sqlite3.Row
+_active_matches = _conn_active.execute("SELECT id, kickoff_time FROM matches WHERE finished = 0").fetchall()
+_conn_active.close()
+
+_live_now = False
+for _m in _active_matches:
+    try:
+        _ko_dt = datetime.strptime(_m['kickoff_time'], '%Y-%m-%d %H:%M:%S')
+        _ko_utc = _ko_dt - timedelta(hours=5, minutes=45)
+        _elapsed = (_now_utc - _ko_utc).total_seconds()
+        if 0 <= _elapsed <= 10800:
+            _live_now = True
+            break
+    except Exception:
+        pass
+
+if _live_now:
+    _stale = _last_sync_time is None or (datetime.utcnow() - _last_sync_time).total_seconds() > 120
+    if _stale:
+        _upd, _err = sync_live_fifa_scores()
+        with _SYNC_LOCK:
+            _LAST_SYNC["time"] = datetime.utcnow()
+            _LAST_SYNC["updated"] = _upd
+            _LAST_SYNC["error"] = _err
+            _LAST_SYNC["reason"] = "Live FIFA load-sync"
+
 
 
 
@@ -677,7 +662,8 @@ def init_db():
             kickoff_time DATETIME,
             score_a INTEGER DEFAULT NULL,
             score_b INTEGER DEFAULT NULL,
-            finished INTEGER DEFAULT 0
+            finished INTEGER DEFAULT 0,
+            fifa_url TEXT DEFAULT NULL
         )
     """)
     
@@ -692,6 +678,8 @@ def init_db():
             cursor.execute("ALTER TABLE matches ADD COLUMN stadium TEXT DEFAULT NULL")
         if "city" not in m_columns:
             cursor.execute("ALTER TABLE matches ADD COLUMN city TEXT DEFAULT NULL")
+        if "fifa_url" not in m_columns:
+            cursor.execute("ALTER TABLE matches ADD COLUMN fifa_url TEXT DEFAULT NULL")
         conn.commit()
     
     # 3. Predictions Table
@@ -817,6 +805,19 @@ def init_db():
                     (match_num, team_a, team_b, group_name, stage, stadium, city, kickoff_time_str, score_a, score_b, finished)
                 )
             conn.commit()
+            
+    # Seed specific FIFA URLs
+    cursor.execute("""
+        UPDATE matches 
+        SET fifa_url = 'https://www.fifa.com/en/match-centre/match/17/285023/289273/400021457' 
+        WHERE match_number = 29 AND fifa_url IS NULL
+    """)
+    cursor.execute("""
+        UPDATE matches 
+        SET fifa_url = 'https://www.fifa.com/en/match-centre/match/17/285023/289273/400021460' 
+        WHERE match_number = 31 AND fifa_url IS NULL
+    """)
+    conn.commit()
     conn.close()
 
 init_db()
@@ -2298,14 +2299,12 @@ with tab_groups:
     st.subheader("🌍 FIFA World Cup 2026 — Group Tables")
     st.write("Group standings from Wikipedia.")
     
-    # Show last sync time and next scheduled sync (Admin only)
+    # Show last sync time and status (Admin only)
     if st.session_state.get("username") == "admin":
         with _SYNC_LOCK:
             last_sync_time = _LAST_SYNC.get("time")
             last_sync_err  = _LAST_SYNC.get("error")
             last_sync_reason = _LAST_SYNC.get("reason", "")
-        
-        _eta_secs, _eta_reason = _next_sync_eta()
         
         col_sync_info, col_sync_btn = st.columns([3, 1])
         with col_sync_info:
@@ -2313,11 +2312,7 @@ with tab_groups:
                 time_ago = int((datetime.utcnow() - last_sync_time).total_seconds() / 60)
                 reason_txt = f" ({last_sync_reason})" if last_sync_reason else ""
                 st.caption(f"Last sync: {time_ago} min ago{reason_txt}")
-            
-            if _eta_secs is not None:
-                eta_min = int(_eta_secs // 60)
-                eta_label = {"HT": "Halftime", "FT": "Full Time", "ET-HT": "ET Halftime", "ET-FT": "ET Full Time"}.get(_eta_reason, _eta_reason)
-                st.caption(f"Next auto-sync: ~{eta_min} min ({eta_label})")
+            st.caption("Wikipedia sync runs automatically after matches end.")
             if last_sync_err:
                 st.caption(f"Last sync error: {last_sync_err}")
         with col_sync_btn:
