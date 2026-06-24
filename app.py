@@ -731,7 +731,8 @@ def init_db():
         ("rzes", hash_password("Predict!2026"), "Rzes Maharjan"),
         ("subaaz", hash_password("Predict!2026"), "Subaaz Bhattarai"),
         ("umesh", hash_password("Predict!2026"), "Umesh Bhattarai"),
-        ("yukesh", hash_password("Predict!2026"), "Yukesh Thakuri")
+        ("yukesh", hash_password("Predict!2026"), "Yukesh Thakuri"),
+        ("romash", hash_password("Predict!2026"), "Romash Shrestha")
     ]
     for username, password, display_name in default_users:
         cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
